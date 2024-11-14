@@ -1,36 +1,62 @@
-const User = require('../models/User.js');
-const bcrypt = require('bcryptjs');
+const User = require('../models/User');
+const { StatusCodes } = require('http-status-codes');
+const { BadRequestError, UnauthenticatedError } = require('../errors');
 
-// Register user
-const registerUser = async (req, res) => {
-  try {
-    const { firstName, lastName, email, password } = req.body;
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+const register = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        const existingUser = await User.findOne({ email });
+        if(existingUser) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'User with this email already exists' });
+        };
+        
+        const user = await User.create({ ...req.body });
+        const token = user.createJWT();
+        res.status(StatusCodes.CREATED).json({ user, token });
+    } catch (error) {
+        res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    //create new user
-    const newUser = new User({
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-    });
-
-    await newUser.save();
-    console.log('User registered:', newUser);
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: { id: newUser._id, email: newUser.email },
-    });
-  } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
 };
 
-module.exports = { registerUser };
+const login = async(req,res) => {
+    const { email, password } = req.body;
+    
+    if(!email || !password){
+        throw new BadRequestError('Please provide email and password');
+    };
+
+    const user = await User.findOne({ email });
+    if(!user) {
+        throw new UnauthenticatedError('Invalid Credentials');
+    };
+
+    const isPasswordCorrect = await user.comparePassword(password);
+    if(!isPasswordCorrect){
+        throw new UnauthenticatedError('Invalid Credentials');
+    };
+
+    const token = user.createJWT();
+
+    const userInfo = user.toObject();
+    delete userInfo.password;
+    
+    res.status(StatusCodes.OK).json({ userInfo, token });
+};
+
+const logout = async (req, res) => {
+    try {
+        res.status(StatusCodes.OK).json({ message: 'Logout successful' });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: 'Logout failed' });
+    }
+};
+
+module.exports = {
+    register,
+    login,
+    logout
+};
