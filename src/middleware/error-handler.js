@@ -22,6 +22,11 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     customError.msg = `No item found with id: ${err.value}`
   }
 
+  if (!customError.statusCode || !customError.msg) {
+    customError.statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
+    customError.msg = 'An unexpected error occurred';
+  }
+
   return res.status(customError.statusCode).json({  msg: customError.msg })
 };
 

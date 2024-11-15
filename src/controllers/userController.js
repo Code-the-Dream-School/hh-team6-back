@@ -41,12 +41,9 @@ const login = async(req,res) => {
 
     const token = user.createJWT();
 
-    const userInfo = user.toObject();
-    delete userInfo.password;
-    delete userInfo._id;
-    delete userInfo.__v;
+    const { email: userEmail, firstName, lastName } = user;
     
-    res.status(StatusCodes.OK).json({ userInfo, token });
+    res.status(StatusCodes.OK).json({ userEmail, firstName, lastName, token });
 };
 
 const logout = async (req, res) => {
