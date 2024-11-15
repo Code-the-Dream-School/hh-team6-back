@@ -4,8 +4,7 @@ const { BadRequestError, UnauthenticatedError } = require('../errors');
 
 const register = async (req, res) => {
     try {
-        const { email } = req.body;
-        
+        const { email } = req.body;    
         const existingUser = await User.findOne({ email });
         if(existingUser) {
             return res.status(StatusCodes.BAD_REQUEST).json({ error: 'User with this email already exists' });
