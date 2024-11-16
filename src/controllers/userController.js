@@ -30,19 +30,15 @@ const login = async (req, res) => {
     }
     const user = await User.findOne({ email });
 
-    if (!user) {
-      throw new UnauthenticatedError('Invalid email');
-    }
-    const isPasswordCorrect = await user.comparePassword(password);
-    if (!isPasswordCorrect) {
+    const isPasswordCorrect = user && await user.comparePassword(password);
+    if (!user || !isPasswordCorrect) {
       throw new UnauthenticatedError('Invalid Credentials');
     }
 
     const token = user.createJWT();
 
     const { email: userEmail, firstName, lastName } = user;
-    delete userInfo.password;
-
+    
     res.status(StatusCodes.OK).json({ userEmail, firstName, lastName, token });
   } catch (error) {
     console.error('Error logging in:', error);
