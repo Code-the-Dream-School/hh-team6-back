@@ -3,22 +3,23 @@ const { StatusCodes } = require('http-status-codes');
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 
 const register = async (req, res) => {
-  try {
-    const { email } = req.body;
+    try {
+        const { email } = req.body;
+        
+        const existingUser = await User.findOne({ email });
+        if(existingUser) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'User with this email already exists' });
+        };
+        
+        const user = await User.create({ ...req.body });
+        const token = user.createJWT();
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ error: 'User with this email already exists' });
+        const { password, _id, __v, ...userData } = user.toObject();
+        
+        res.status(StatusCodes.CREATED).json({ userData, token });
+    } catch (error) {
+        res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
     }
-
-    const user = await User.create({ ...req.body });
-    const token = user.createJWT();
-    res.status(StatusCodes.CREATED).json({ user, token });
-  } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
-  }
 };
 
 const login = async (req, res) => {
@@ -37,16 +38,12 @@ const login = async (req, res) => {
 
     const token = user.createJWT();
 
-    const { email: userEmail, firstName, lastName } = user;
+    const userInfo = user.toObject();
+    delete userInfo.password;
     
-    res.status(StatusCodes.OK).json({ userEmail, firstName, lastName, token });
-  } catch (error) {
-    console.error('Error logging in:', error);
-    const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    const errorMessage = error.message || 'Error logging in';
-    res.status(statusCode).json({ message: errorMessage });
-  }
+    res.status(StatusCodes.OK).json({ userInfo, token });
 };
+
 const logout = async (req, res) => {
   try {
     res.status(StatusCodes.OK).json({ message: 'Logout successful' });
