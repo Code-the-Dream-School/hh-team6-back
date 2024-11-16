@@ -18,9 +18,10 @@ const register = async (req, res) => {
         
         res.status(StatusCodes.CREATED).json({ userData, token });
     } catch (error) {
-        res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
+      console.error(error);
+      res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
+      }
     }
-};
 
 const login = async (req, res) => {
   try {
@@ -37,12 +38,15 @@ const login = async (req, res) => {
     }
 
     const token = user.createJWT();
-
-    const userInfo = user.toObject();
-    delete userInfo.password;
-    
-    res.status(StatusCodes.OK).json({ userInfo, token });
-};
+    const { email: userEmail, firstName, lastName } = user;
+    res.status(StatusCodes.OK).json({ user: { userEmail, firstName, lastName }, token });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+    const errorMessage = error.message || 'Error logging in';
+    res.status(statusCode).json({ message: errorMessage });
+  }
+ };
 
 const logout = async (req, res) => {
   try {
