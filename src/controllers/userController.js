@@ -13,7 +13,10 @@ const register = async (req, res) => {
         
         const user = await User.create({ ...req.body });
         const token = user.createJWT();
-        res.status(StatusCodes.CREATED).json({ user, token });
+
+        const { password, _id, __v, ...userData } = user.toObject();
+        
+        res.status(StatusCodes.CREATED).json({ userData, token });
     } catch (error) {
         res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
     }
@@ -38,10 +41,9 @@ const login = async(req,res) => {
 
     const token = user.createJWT();
 
-    const userInfo = user.toObject();
-    delete userInfo.password;
+    const { email: userEmail, firstName, lastName } = user;
     
-    res.status(StatusCodes.OK).json({ userInfo, token });
+    res.status(StatusCodes.OK).json({ userEmail, firstName, lastName, token });
 };
 
 const logout = async (req, res) => {
