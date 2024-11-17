@@ -8,7 +8,7 @@ const register = async (req, res) => {
         
         const existingUser = await User.findOne({ email });
         if(existingUser) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'User with this email already exists' });
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Invalid credentials' });
         };
         
         const user = await User.create({ ...req.body });
