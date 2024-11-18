@@ -5,7 +5,10 @@ const { StatusCodes } = require('http-status-codes');
 const getAllBooks = async (req, res, next) => {
   try {
     const {
-      query,
+      query, //general search
+      title,
+      author,
+      isbn,
       limit = 12,
       skip = 0,
       ageCategory,
@@ -13,15 +16,17 @@ const getAllBooks = async (req, res, next) => {
       genre,
       coverType,
       sort = '-createdAt',
-      userId
+      userId,
     } = req.query;
+
     const queryObj = {};
 
+    //filter by user
     if (userId) {
-        queryObj.createdBy = userId; 
+      queryObj.createdBy = userId;
     }
 
-    //search by title, author, isbn
+    //General search by "query"
     if (query) {
       queryObj.$or = [
         { title: { $regex: query, $options: 'i' } },
@@ -29,6 +34,25 @@ const getAllBooks = async (req, res, next) => {
         { isbn10: { $regex: query, $options: 'i' } },
         { isbn13: { $regex: query, $options: 'i' } },
       ];
+    }
+
+    // Combine conditions from the form on the main page
+    const searchConditions = [];
+    if (title) {
+      searchConditions.push({ title: { $regex: title, $options: 'i' } });
+    }
+    if (author) {
+      searchConditions.push({ author: { $regex: author, $options: 'i' } });
+    }
+    if (isbn) {
+      searchConditions.push(
+        { isbn10: { $regex: isbn, $options: 'i' } },
+        { isbn13: { $regex: isbn, $options: 'i' } }
+      );
+    }
+
+    if (searchConditions.length > 0) {
+      queryObj.$and = searchConditions;
     }
 
     // Filter by multiple choice
@@ -57,6 +81,22 @@ const getAllBooks = async (req, res, next) => {
   }
 };
 
+const getBook = async (req, res, next) => {
+    try {
+        const { id: bookId } = req.params;
+
+        const book = await Book.findById(bookId);
+    
+        if (!book) {
+          throw new NotFoundError(`No book with id ${bookId}`);
+        }
+    
+        res.status(StatusCodes.OK).json({ book });
+      } catch (error) {
+        next(error); 
+      }
+};
+
 const createBook = async (req, res, next) => {
   try {
     const { coverImageUrl, ...bookData } = req.body;
@@ -77,4 +117,5 @@ const createBook = async (req, res, next) => {
 module.exports = {
   createBook,
   getAllBooks,
+  getBook,
 };
