@@ -1,6 +1,7 @@
 const Book = require('../models/Book');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
+const { default: mongoose } = require('mongoose');
 
 const getAllBooks = async (req, res, next) => {
   try {
@@ -76,25 +77,32 @@ const getAllBooks = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({ books, count: books.length });
   } catch (error) {
-    console.log('Error fetching books:', error);
+    console.error('Error fetching books:', error);
     next(error);
   }
 };
 
 const getBook = async (req, res, next) => {
-    try {
-        const { id: bookId } = req.params;
+  try {
+    const { id: bookId } = req.params;
 
-        const book = await Book.findById(bookId);
-    
-        if (!book) {
-          throw new NotFoundError(`No book with id ${bookId}`);
-        }
-    
-        res.status(StatusCodes.OK).json({ book });
-      } catch (error) {
-        next(error); 
-      }
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      const error = new Error(`Invalid ID format: ${bookId}`);
+      error.name = 'CastError';
+      return next(error); 
+    }
+
+    const book = await Book.findById(bookId);
+
+    if (!book) {
+      return next(new NotFoundError(`No book with id ${bookId}`));
+    }
+
+    res.status(StatusCodes.OK).json({ book });
+  } catch (error) {
+    console.error('Error fetching book:', error);
+    next(error);
+  }
 };
 
 const createBook = async (req, res, next) => {

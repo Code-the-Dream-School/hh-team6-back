@@ -25,6 +25,13 @@ app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use('/api/v1', userRouter);
 app.use('/api/v1/books', booksRouter);
 
+app.use((req, res, next) => {
+    const error = new Error(`Cannot ${req.method} ${req.originalUrl}`);
+    error.statusCode = 404;
+    error.type = 'GeneralError'; 
+    next(error); 
+});
+
 // error handler middleware
 app.use(errorHandlerMiddleware); 
 
