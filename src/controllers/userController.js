@@ -8,7 +8,7 @@ const register = async (req, res) => {
         
         const existingUser = await User.findOne({ email });
         if(existingUser) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'User with this email already exists' });
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Invalid credentials' });
         };
         
         const user = await User.create({ ...req.body });
@@ -18,47 +18,49 @@ const register = async (req, res) => {
         
         res.status(StatusCodes.CREATED).json({ userData, token });
     } catch (error) {
-        res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
+      console.error(error);
+      res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
+      }
     }
-};
 
-const login = async(req,res) => {
+const login = async (req, res) => {
+  try {
     const { email, password } = req.body;
-    
-    if(!email || !password){
-        throw new BadRequestError('Please provide email and password');
-    };
 
+    if (!email || !password) {
+      throw new BadRequestError('Please provide email and password');
+    }
     const user = await User.findOne({ email });
-    if(!user) {
-        throw new UnauthenticatedError('Invalid Credentials');
-    };
 
-    const isPasswordCorrect = await user.comparePassword(password);
-    if(!isPasswordCorrect){
-        throw new UnauthenticatedError('Invalid Credentials');
-    };
+    const isPasswordCorrect = user && await user.comparePassword(password);
+    if (!user || !isPasswordCorrect) {
+      throw new UnauthenticatedError('Invalid Credentials');
+    }
 
     const token = user.createJWT();
-
     const { email: userEmail, firstName, lastName } = user;
-    
-    res.status(StatusCodes.OK).json({ userEmail, firstName, lastName, token });
-};
+    res.status(StatusCodes.OK).json({ user: { userEmail, firstName, lastName }, token });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+    const errorMessage = error.message || 'Error logging in';
+    res.status(statusCode).json({ message: errorMessage });
+  }
+ };
 
 const logout = async (req, res) => {
-    try {
-        res.status(StatusCodes.OK).json({ message: 'Logout successful' });
-    } catch (error) {
-        console.error('Error during logout:', error);
-        res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .json({ message: 'Logout failed' });
-    }
+  try {
+    res.status(StatusCodes.OK).json({ message: 'Logout successful' });
+  } catch (error) {
+    console.error('Error during logout:', error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: 'Logout failed' });
+  }
 };
 
 module.exports = {
-    register,
-    login,
-    logout
+  register,
+  login,
+  logout,
 };
