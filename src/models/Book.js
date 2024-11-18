@@ -153,21 +153,7 @@ const BookSchema = new mongoose.Schema(
   },
   { 
     timestamps: true 
-  },
-//   { // Apply the transformation to exclude the __v field in the response
-//     toJSON: { 
-//       virtuals: true, 
-//       transform: (doc, ret) => { 
-//         delete ret.__v;
-//       } 
-//     },
-//     toObject: { 
-//       virtuals: true, 
-//       transform: (doc, ret) => { 
-//         delete ret.__v; 
-//       } 
-//     }
-//   }
+  }
 );
 
 module.exports = mongoose.model('Book', BookSchema);
