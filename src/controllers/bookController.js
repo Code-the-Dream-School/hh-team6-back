@@ -122,8 +122,41 @@ const createBook = async (req, res, next) => {
   }
 };
 
+const deleteBook = async (req, res, next) => {
+  try {
+    const {
+      user: { userId },
+      params: { id: bookId },
+    } = req;
+
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      const error = new Error(`Invalid ID format: ${bookId}`);
+      error.name = 'CastError';
+      return next(error);
+    }
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return next(new NotFoundError(`No book found with id: ${bookId}`));
+    }
+
+    if (book.createdBy.toString() !== userId) {
+      return next(new BadRequestError('You are not authorized to delete this book'));
+    }
+
+    await Book.findOneAndDelete({ _id: bookId, createdBy: userId });
+    res.status(StatusCodes.OK).json({
+      msg: `Book with id ${bookId} has been successfully deleted.`,
+    });
+  } catch (error) {
+    console.error('Error deleting book:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   createBook,
   getAllBooks,
   getBook,
+  deleteBook
 };
