@@ -62,10 +62,10 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     customError.type = 'DuplicateKeyError';
   }
 
-  // Handle CastError (invalid ObjectId)
   if (err.name === 'CastError') {
-    customError.errors = { id: `No item found with id: ${err.value}` };
-    customError.statusCode = StatusCodes.NOT_FOUND;
+    const invalidId = err.value || 'Unknown ID';
+    customError.errors = { id: `Invalid ID format: ${invalidId}` };
+    customError.statusCode = StatusCodes.BAD_REQUEST;
     customError.msg = 'Invalid ID';
     customError.type = 'CastError';
   }

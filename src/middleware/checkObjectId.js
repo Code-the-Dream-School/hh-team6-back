@@ -6,7 +6,8 @@ const checkObjectId = (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(bookId)) {
     const error = new Error(`Invalid ID format: ${bookId}`);
     error.name = 'CastError';
-    return next(error);
+    error.value = bookId; 
+    return next(error); 
   }
 
   next();

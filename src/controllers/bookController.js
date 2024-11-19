@@ -1,7 +1,6 @@
 const Book = require('../models/Book');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
-const { default: mongoose } = require('mongoose');
 
 const getAllBooks = async (req, res, next) => {
   try {
@@ -123,7 +122,7 @@ const updateBook = async (req, res, next) => {
     const {
       user: { userId },
     } = req;
-
+    
     const book = await Book.findById(bookId);
     if (!book) {
       return next(new NotFoundError(`No book found with id: ${bookId}`));
