@@ -6,6 +6,11 @@ const { BadRequestError, UnauthenticatedError } = require('../errors');
 const register = async (req, res) => {
   try {
     const { email } = req.body;
+    if (!email) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: 'Email is required' });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -49,20 +54,22 @@ const login = async (req, res) => {
     console.error('Error logging in:', error);
     const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
     const errorMessage = error.message || 'Error logging in';
-    res.status(statusCode).json({ message: errorMessage });
+    res.status(statusCode).json({ error: errorMessage });
   }
 };
-
-const logout = async (req, res) => {
+const logout = (req, res) => {
   try {
-    res.status(StatusCodes.OK).json({ message: 'Logout successful' });
+  res
+  .clearCookie('sessionToken', { httpOnly: true, secure: true, sameSite: 'strict' }) // Adjust options as needed
+  .status(StatusCodes.OK)
+  .json({ message: 'Logout successful' });
   } catch (error) {
-    console.error('Error during logout:', error);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: 'Logout failed' });
+  console.error('Error during logout:', error);
+  res
+  .status(StatusCodes.INTERNAL_SERVER_ERROR)
+  .json({ error: 'Logout failed' });
   }
-};
+  };
 
 const updateUser = async (req, res) => {
   try {
@@ -75,13 +82,21 @@ const updateUser = async (req, res) => {
     const userId = decoded.userId;
 
     const { firstName, lastName, location } = req.body;
-    if (!firstName && !lastName && !location) {
+    const updates = {};
+
+    // Only add fields to updates if they are not undefined
+    if (firstName !== undefined) updates.firstName = firstName;
+    if (lastName !== undefined) updates.lastName = lastName;
+    if (location !== undefined && location.trim() !== '') updates.location = location;
+
+    
+    if (Object.keys(updates).length === 0) {
       throw new BadRequestError('No valid fields to update');
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: { firstName, lastName, location } },
+      { $set: updates },
       { new: true, runValidators: true }
     );
 
@@ -94,7 +109,7 @@ const updateUser = async (req, res) => {
     console.error('Error updating user:', error.message);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message || 'Error updating user' });
+      .json({ error: error.message || 'Error updating user' });
   }
 };
 
