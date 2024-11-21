@@ -18,8 +18,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(logger('dev'));
-app.use(express.static('public'));
+
+//static files
 app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(express.static('public'));
 
 // routes
 app.use('/api/v1', userRouter);
