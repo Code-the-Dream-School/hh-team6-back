@@ -50,18 +50,16 @@ const login = async (req, res) => {
     res
       .status(StatusCodes.OK)
       .json({ user: { userEmail, firstName, lastName }, token });
-  } catch (error) {
-    console.error('Error logging in:', error);
-    const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    const errorMessage = error.message || 'Error logging in';
-    res.status(statusCode).json({ error: errorMessage });
-  }
+    } catch (error) {
+      console.error('Error logging in:', error.message);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error logging in' });
+    }
+  
 };
 const logout = (req, res) => {
   try {
   res
-  .clearCookie('sessionToken', { httpOnly: true, secure: true, sameSite: 'strict' }) // Adjust options as needed
-  .status(StatusCodes.OK)
+  .clearCookie('sessionToken', { httpOnly: true, secure: true, sameSite: 'strict' }) 
   .json({ message: 'Logout successful' });
   } catch (error) {
   console.error('Error during logout:', error);
@@ -75,7 +73,7 @@ const updateUser = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      throw new UnauthenticatedError('Authentication token missing');
+      throw new UnauthenticatedError('Unauthorized');
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -87,7 +85,12 @@ const updateUser = async (req, res) => {
     // Only add fields to updates if they are not undefined
     if (firstName !== undefined) updates.firstName = firstName;
     if (lastName !== undefined) updates.lastName = lastName;
-    if (location !== undefined && location.trim() !== '') updates.location = location;
+    if (location !== undefined) {
+      if (location.trim() === '') {
+        throw new BadRequestError('Location cannot be empty');
+      }
+      updates.location = location;
+    }
 
     
     if (Object.keys(updates).length === 0) {
@@ -103,8 +106,10 @@ const updateUser = async (req, res) => {
     if (!updatedUser) {
       throw new BadRequestError('User not found');
     }
+    const { password, _id, __v, ...userData } = updatedUser.toObject();
 
-    res.status(StatusCodes.OK).json({ user: updatedUser });
+
+    res.status(StatusCodes.OK).json({ user: userData});
   } catch (error) {
     console.error('Error updating user:', error.message);
     res
