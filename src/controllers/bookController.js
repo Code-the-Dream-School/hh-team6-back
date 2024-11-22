@@ -106,12 +106,12 @@ const createBook = async (req, res, next) => {
     if (coverImageUrl && !(await validateImageURL(coverImageUrl))) {
       return next(new BadRequestError('Invalid cover image URL format.'));
     }
-    
+
     bookData.createdBy = req.user.userId;
     bookData.language = req.body.language || 'English';
     bookData.coverImageUrl =
       coverImageUrl || process.env.DEFAULT_COVER_IMAGE_URL;
-    
+
     const book = await Book.create(bookData);
     res
       .status(StatusCodes.CREATED)
@@ -181,15 +181,9 @@ const updateBook = async (req, res, next) => {
 
 const deleteBook = async (req, res, next) => {
   try {
-    const {
-      user: { userId },
-      params: { id: bookId },
-    } = req;
+    const { id: bookId } = req.params;
 
-    const book = await Book.findByIdAndDelete({
-      _id: bookId,
-      createdBy: userId,
-    });
+    const book = await Book.findByIdAndDelete(bookId);
 
     if (!book) {
       return next(new NotFoundError(`No book found with id: ${bookId}`));

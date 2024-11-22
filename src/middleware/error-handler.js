@@ -2,20 +2,19 @@ const { StatusCodes } = require('http-status-codes');
 const { UnauthenticatedError, CustomAPIError, BadRequestError } = require('../errors');
 
 const errorHandlerMiddleware = (err, req, res, next) => {
+  console.error('Error occurred:', {
+    type: err.type || 'GeneralError',
+    message: err.message,
+    path: req.originalUrl,
+    method: req.method,
+  });
+  
   let customError = {
     statusCode: err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
     msg: 'Something went wrong, try again later.',
     type: 'GeneralError',
     errors: null,
   };
-
-  console.error('Error occurred:', {
-    type: err.type || 'GeneralError',
-    message: err.message,
-    stack: err.stack,
-    path: req.originalUrl,
-    method: req.method,
-  });
 
   // Handle BadRequestError (e.g., invalid cover image URL)
   if (err instanceof BadRequestError) {
