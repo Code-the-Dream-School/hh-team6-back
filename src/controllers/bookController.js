@@ -1,6 +1,7 @@
 const Book = require('../models/Book');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
+const { validateImageURL } = require('../utils/validateImageUrl');
 
 const getAllBooks = async (req, res, next) => {
   try {
@@ -101,11 +102,16 @@ const getBook = async (req, res, next) => {
 const createBook = async (req, res, next) => {
   try {
     const { coverImageUrl, ...bookData } = req.body;
+
+    if (coverImageUrl && !(await validateImageURL(coverImageUrl))) {
+      return next(new BadRequestError('Invalid cover image URL format.'));
+    }
+    
     bookData.createdBy = req.user.userId;
     bookData.language = req.body.language || 'English';
     bookData.coverImageUrl =
       coverImageUrl || process.env.DEFAULT_COVER_IMAGE_URL;
-
+    
     const book = await Book.create(bookData);
     res
       .status(StatusCodes.CREATED)
@@ -136,12 +142,17 @@ const updateBook = async (req, res, next) => {
 
     if (
       coverImageUrl &&
-      coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL
+      coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL &&
+      !(await validateImageURL(coverImageUrl))
     ) {
+      return next(new BadRequestError('Invalid cover image URL format.'));
+    }
+    
+    if (coverImageUrl && coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL) {
       updateData.coverImageUrl = coverImageUrl;
     } else if (!coverImageUrl) {
       updateData.coverImageUrl = book.coverImageUrl;
-    }
+    }    
 
     const updatedBook = await Book.findByIdAndUpdate(bookId, updateData, {
       new: true,
@@ -167,16 +178,15 @@ const deleteBook = async (req, res, next) => {
       params: { id: bookId },
     } = req;
 
-    const book = await Book.findById(bookId);
+    const book = await Book.findByIdAndDelete({
+      _id: bookId,
+      createdBy: userId,
+    });
+
     if (!book) {
       return next(new NotFoundError(`No book found with id: ${bookId}`));
     }
 
-    if (book.createdBy.toString() !== userId) {
-      return next(new BadRequestError('You are not authorized to delete this book'));
-    }
-
-    await Book.findOneAndDelete({ _id: bookId, createdBy: userId });
     res.status(StatusCodes.OK).json({
       msg: `Book with id ${bookId} has been successfully deleted.`,
     });

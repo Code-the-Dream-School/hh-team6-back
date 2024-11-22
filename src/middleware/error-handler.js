@@ -1,5 +1,5 @@
 const { StatusCodes } = require('http-status-codes');
-const { UnauthenticatedError, CustomAPIError } = require('../errors');
+const { UnauthenticatedError, CustomAPIError, BadRequestError } = require('../errors');
 
 const errorHandlerMiddleware = (err, req, res, next) => {
   let customError = {
@@ -8,19 +8,26 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     type: 'GeneralError',
     errors: null,
   };
-  
+
   console.error('Error occurred:', {
     type: err.type || 'GeneralError',
     message: err.message,
-    stack: err.stack, 
-    path: req.originalUrl, 
-    method: req.method, 
+    stack: err.stack,
+    path: req.originalUrl,
+    method: req.method,
   });
+
+  // Handle BadRequestError (e.g., invalid cover image URL)
+  if (err instanceof BadRequestError) {
+    customError.statusCode = StatusCodes.BAD_REQUEST;
+    customError.msg = err.message || 'Invalid cover image URL format.';
+    customError.type = 'BadRequestError';
+  }
   
   // Handle GeneralError (404 Not Found routes)
   if (err.type === 'GeneralError') {
     customError.statusCode = 404;
-    customError.msg = `Cannot ${req.method} ${req.originalUrl}`; 
+    customError.msg = `Cannot ${req.method} ${req.originalUrl}`;
     customError.type = 'GeneralError';
   }
 
