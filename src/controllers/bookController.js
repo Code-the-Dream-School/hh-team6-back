@@ -123,22 +123,13 @@ const createBook = async (req, res, next) => {
 
 const updateBook = async (req, res, next) => {
   try {
-    const { coverImageUrl, ...updateData } = req.body;
-    const { id: bookId } = req.params;
     const {
-      user: { userId },
-    } = req;
-    
-    const book = await Book.findById(bookId);
-    if (!book) {
-      return next(new NotFoundError(`No book found with id: ${bookId}`));
-    }
-
-    if (book.createdBy.toString() !== userId) {
-      return next(
-        new BadRequestError('You are not authorized to update this book')
-      );
-    }
+      title, author, publisher, publishedYear, pages, isbn10, isbn13,
+      description, genre, ageCategory, condition, coverType, language,
+      price, coverImageUrl
+    } = req.body;
+    const { id: bookId } = req.params;
+    const { user: { userId } } = req;
 
     if (
       coverImageUrl &&
@@ -147,24 +138,41 @@ const updateBook = async (req, res, next) => {
     ) {
       return next(new BadRequestError('Invalid cover image URL format.'));
     }
-    
+
+    const updateData = {
+      title, author, publisher, publishedYear, pages, isbn10, isbn13,
+      description, genre, ageCategory, condition, coverType, language,
+      price
+    };
+
     if (coverImageUrl && coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL) {
       updateData.coverImageUrl = coverImageUrl;
-    } else if (!coverImageUrl) {
-      updateData.coverImageUrl = book.coverImageUrl;
-    }    
-
-    const updatedBook = await Book.findByIdAndUpdate(bookId, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updatedBook) {
-      console.log('Failed to update book');
-      return next(new Error('Book update failed.'));
     }
 
-    res.status(StatusCodes.OK).json({ msg: 'The book has been successfully updated.', updatedBook });
+    //Remove fields with undefined values
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+    
+    const updatedBook = await Book.findByIdAndUpdate(
+      bookId,
+      { ...updateData, createdBy: userId }, 
+      {
+        new: true, 
+        runValidators: true, 
+      }
+    );
+
+    if (!updatedBook) {
+      return next(new NotFoundError(`No book found with id: ${bookId}`));
+    }
+
+    res.status(StatusCodes.OK).json({
+      msg: 'The book has been successfully updated.',
+      updatedBook,
+    });
   } catch (error) {
     console.error('Error updating book:', error);
     next(error);
