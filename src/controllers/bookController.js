@@ -18,9 +18,22 @@ const getAllBooks = async (req, res, next) => {
       coverType,
       sort = '-createdAt',
       userId,
+      isAvailable,
     } = req.query;
 
+    const validatedLimit = Math.min(Math.max(parseInt(limit, 10) || 12, 1), 100);
+    const validatedSkip = Math.max(parseInt(skip, 10) || 0, 0);
+
     const queryObj = {};
+
+    // Filter by availability
+    if (isAvailable !== undefined) {
+      if (isAvailable === 'true') {
+        queryObj.isAvailable = true; // Available books
+      } else if (isAvailable === 'false') {
+        queryObj.isAvailable = false; // Sold books
+      }
+    }
 
     //filter by user
     if (userId) {
@@ -72,8 +85,8 @@ const getAllBooks = async (req, res, next) => {
 
     const books = await Book.find(queryObj)
       .sort(sort)
-      .limit(Number(limit))
-      .skip(Number(skip));
+      .limit(validatedLimit) 
+      .skip(validatedSkip);  
 
     res.status(StatusCodes.OK).json({ books, count: books.length });
   } catch (error) {
@@ -126,7 +139,7 @@ const updateBook = async (req, res, next) => {
     const {
       title, author, publisher, publishedYear, pages, isbn10, isbn13,
       description, genre, ageCategory, condition, coverType, language,
-      price, coverImageUrl
+      price, coverImageUrl, isAvailable
     } = req.body;
     const { id: bookId } = req.params;
     const { user: { userId } } = req;
@@ -142,7 +155,7 @@ const updateBook = async (req, res, next) => {
     const updateData = {
       title, author, publisher, publishedYear, pages, isbn10, isbn13,
       description, genre, ageCategory, condition, coverType, language,
-      price
+      price, isAvailable
     };
 
     if (coverImageUrl && coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL) {
