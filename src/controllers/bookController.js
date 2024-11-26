@@ -21,6 +21,9 @@ const getAllBooks = async (req, res, next) => {
       isAvailable,
     } = req.query;
 
+    const validatedLimit = Math.min(Math.max(parseInt(limit, 10) || 12, 1), 100);
+    const validatedSkip = Math.max(parseInt(skip, 10) || 0, 0);
+
     const queryObj = {};
 
     // Filter by availability
@@ -82,8 +85,8 @@ const getAllBooks = async (req, res, next) => {
 
     const books = await Book.find(queryObj)
       .sort(sort)
-      .limit(Number(limit))
-      .skip(Number(skip));
+      .limit(validatedLimit) 
+      .skip(validatedSkip);  
 
     res.status(StatusCodes.OK).json({ books, count: books.length });
   } catch (error) {
