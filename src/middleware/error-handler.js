@@ -1,5 +1,6 @@
 const { StatusCodes } = require('http-status-codes');
 const { UnauthenticatedError, CustomAPIError, BadRequestError } = require('../errors');
+const multer = require('multer');
 
 const errorHandlerMiddleware = (err, req, res, next) => {
   console.error('Error occurred:', {
@@ -15,6 +16,13 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     type: 'GeneralError',
     errors: null,
   };
+  
+  //handle file size
+  if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+    customError.statusCode = StatusCodes.BAD_REQUEST;
+    customError.msg = 'File size exceeds the maximum allowed size of 1MB.';
+    customError.type = 'FileSizeError';
+  }
 
   // Handle BadRequestError (e.g., invalid cover image URL)
   if (err instanceof BadRequestError) {
