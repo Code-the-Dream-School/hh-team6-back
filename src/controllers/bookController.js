@@ -2,8 +2,7 @@ const Book = require('../models/Book');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const { validateImageURL } = require('../utils/validateImageUrl');
-const { cloudinary, DEFAULT_IMAGE_URL, DEFAULT_IMAGE_PUBLIC_ID } = require('../config/cloudinary');
-const { uploadFile } = require('../utils/cloudinaryService');
+const { uploadImage } = require('../utils/cloudinaryService');
 
 const getAllBooks = async (req, res, next) => {
   try {
@@ -125,23 +124,12 @@ const createBook = async (req, res, next) => {
     bookData.createdBy = req.user.userId;
     bookData.language = req.body.language || 'English';
 
-    if (req.file) {
-      try {
-        const result = await uploadFile(req.file);
-        bookData.coverImageUrl = result.secure_url;
-        bookData.coverImagePublicId = result.public_id;
-      } catch (error) {
-        return next(error);
-      }
-    } else if (coverImageUrl) {
-      const result = await cloudinary.uploader.upload(coverImageUrl, {
-        folder: 'books',
-      });
-      bookData.coverImageUrl = result.secure_url;
-      bookData.coverImagePublicId = result.public_id;
-    } else {
-      bookData.coverImageUrl = DEFAULT_IMAGE_URL;
-      bookData.coverImagePublicId = DEFAULT_IMAGE_PUBLIC_ID;
+    try {
+      const imageData = await uploadImage(req.file, coverImageUrl);
+      bookData.coverImageUrl = imageData.coverImageUrl;
+      bookData.coverImagePublicId = imageData.coverImagePublicId;
+    } catch (error) {
+      return next(error);
     }
 
     const book = await Book.create(bookData);
