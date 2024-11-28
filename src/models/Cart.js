@@ -58,10 +58,20 @@ const CartSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-CartSchema.pre('save', function (next) {
-  const itemsTotal = this.orderItems.reduce((sum, item) => sum + item.price);
-  this.total = itemsTotal + this.tax + this.shippingFee;
-  next();
-});
+CartSchema.pre('save', async function (next) {
+    try {
+      const bookIds = this.orderItems.map(item => item.book);
+      const books = await mongoose.model('Book').find({ _id: { $in: bookIds } });
+      const unavailableBooks = books.filter(book => !book.isAvailable);
+      if (unavailableBooks.length > 0) {
+        return next(new Error('One or more books are not available.'));
+      }
+      const itemsTotal = this.orderItems.reduce((sum, item) => sum + item.price, 0);
+      this.total = itemsTotal + this.tax + this.shippingFee;  
+      next();
+    } catch (error) {
+      next(error);
+    }
+  });
 
 module.exports = mongoose.model('Cart', CartSchema);
