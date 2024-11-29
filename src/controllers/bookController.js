@@ -2,7 +2,7 @@ const Book = require('../models/Book');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const { validateImageURL } = require('../utils/validateImageUrl');
-const { uploadImage } = require('../utils/cloudinaryService');
+const { uploadImage, deleteImage } = require('../utils/cloudinaryService');
 
 const getAllBooks = async (req, res, next) => {
   try {
@@ -208,6 +208,8 @@ const deleteBook = async (req, res, next) => {
     if (!book) {
       return next(new NotFoundError(`No book found with id: ${bookId}`));
     }
+
+    await deleteImage(book.coverImagePublicId);
 
     res.status(StatusCodes.OK).json({
       msg: `Book with id ${bookId} has been successfully deleted.`,
