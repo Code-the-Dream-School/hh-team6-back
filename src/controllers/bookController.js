@@ -3,6 +3,7 @@ const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const { validateImageURL } = require('../utils/validateImageUrl');
 const { uploadImage, deleteImage } = require('../utils/cloudinaryService');
+const { DEFAULT_IMAGE_PUBLIC_ID, DEFAULT_IMAGE_URL } = require('../config/cloudinary');
 
 const getAllBooks = async (req, res, next) => {
   try {
@@ -151,23 +152,34 @@ const updateBook = async (req, res, next) => {
     const { id: bookId } = req.params;
     const { user: { userId } } = req;
 
-    if (
-      coverImageUrl &&
-      coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL &&
-      !(await validateImageURL(coverImageUrl))
-    ) {
-      return next(new BadRequestError('Invalid cover image URL format.'));
+    let newImageData = {};
+
+    if (req.file || (coverImageUrl && coverImageUrl !== DEFAULT_IMAGE_URL)){
+      const book = await Book.findById(bookId);
+      if (!book) {
+        return next(new NotFoundError(`No book found with id: ${bookId}`));
+      }
+
+      const oldPublicId = book.coverImagePublicId;
+      if (oldPublicId && oldPublicId !== DEFAULT_IMAGE_PUBLIC_ID) {
+        await deleteImage(oldPublicId);
+      }
+      
+      if (req.file) {
+        newImageData = await uploadImage(req.file);
+      } else if (coverImageUrl !== book.coverImageUrl) {
+        if (!(await validateImageURL(coverImageUrl))) {
+          return next(new BadRequestError('Invalid cover image URL format.'));
+        }
+        newImageData = await uploadImage(null, coverImageUrl);
+      }
     }
 
     const updateData = {
       title, author, publisher, publishedYear, pages, isbn10, isbn13,
       description, genre, ageCategory, condition, coverType, language,
-      price, isAvailable
+      price, isAvailable, ...newImageData,
     };
-
-    if (coverImageUrl && coverImageUrl !== process.env.DEFAULT_COVER_IMAGE_URL) {
-      updateData.coverImageUrl = coverImageUrl;
-    }
 
     //Remove fields with undefined values
     Object.keys(updateData).forEach((key) => {
@@ -209,7 +221,9 @@ const deleteBook = async (req, res, next) => {
       return next(new NotFoundError(`No book found with id: ${bookId}`));
     }
 
-    await deleteImage(book.coverImagePublicId);
+    if (book.coverImagePublicId && book.coverImagePublicId !== DEFAULT_IMAGE_PUBLIC_ID) {
+      await deleteImage(book.coverImagePublicId);
+    }
 
     res.status(StatusCodes.OK).json({
       msg: `Book with id ${bookId} has been successfully deleted.`,

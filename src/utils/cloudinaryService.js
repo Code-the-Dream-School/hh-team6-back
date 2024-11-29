@@ -24,10 +24,6 @@ const uploadFile = (file) => {
 };
 
 const deleteImage = async (coverImagePublicId) => {
-  if (!coverImagePublicId || coverImagePublicId === DEFAULT_IMAGE_PUBLIC_ID) {
-    return;
-  }
-
   try {
     await cloudinary.uploader.destroy(coverImagePublicId);
     console.log(`Image with ID ${coverImagePublicId} successfully deleted.`);

@@ -14,7 +14,7 @@ router.route('/').get(getAllBooks);
 //single book
 router.route('/:id')
     .get(checkObjectId, getBook)         
-    .patch(auth, checkObjectId, updateBook)   
+    .patch(auth, checkObjectId, upload, updateBook)   
     .delete(auth, checkObjectId, deleteBook); 
 
 module.exports = router;
