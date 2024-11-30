@@ -9,7 +9,7 @@ const {
 const uploadFile = (file) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: 'books', resource_type: 'auto' },
+      { folder: 'books', resource_type: 'auto', format: 'jpg' },
       (error, result) => {
         if (error) {
           return reject(
@@ -42,7 +42,10 @@ const uploadImage = async (file, url, folder = 'books') => {
         coverImagePublicId: result.public_id,
       };
     } else if (url) {
-      const result = await cloudinary.uploader.upload(url, { folder });
+      const result = await cloudinary.uploader.upload(url, {
+        folder,
+        format: 'jpg',
+      });
       return {
         coverImageUrl: result.secure_url,
         coverImagePublicId: result.public_id,

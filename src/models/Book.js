@@ -73,6 +73,7 @@ const BookSchema = new mongoose.Schema(
         'Crafts',
         'Crime & Detective',
         'Cultural Studies',
+        'Detective',
         'Diaries & Journals',
         'Dystopia',
         'Education',
