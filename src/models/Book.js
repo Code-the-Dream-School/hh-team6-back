@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { validateImageURL } = require('../utils/validateImageUrl');
 const { validateISBN13, validateISBN10 } = require('../utils/validateISBN');
+const { DEFAULT_IMAGE_URL, DEFAULT_IMAGE_PUBLIC_ID } = require('../config/cloudinary');
 
 const BookSchema = new mongoose.Schema(
   {
@@ -72,6 +73,7 @@ const BookSchema = new mongoose.Schema(
         'Crafts',
         'Crime & Detective',
         'Cultural Studies',
+        'Detective',
         'Diaries & Journals',
         'Dystopia',
         'Education',
@@ -148,7 +150,7 @@ const BookSchema = new mongoose.Schema(
     },
     coverImageUrl: {
       type: String,
-      default: process.env.DEFAULT_COVER_IMAGE_URL,
+      default: DEFAULT_IMAGE_URL,
       validate: {
         validator: validateImageURL,
         message: 'Invalid image URL. It must end with .jpg, .jpeg, .png, .webp or .bmp.',
@@ -156,6 +158,7 @@ const BookSchema = new mongoose.Schema(
     },
     coverImagePublicId: {
       type: String,
+      default: DEFAULT_IMAGE_PUBLIC_ID,
     },
     createdBy: {
       type: mongoose.Types.ObjectId,

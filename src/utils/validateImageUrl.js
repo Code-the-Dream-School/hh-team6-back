@@ -1,5 +1,4 @@
 const https = require('https');
-const http = require('http');
 const { BadRequestError } = require('../errors'); 
 
 const isValidUrl = (url) => {
@@ -20,15 +19,17 @@ const validateImageURL = (url) => {
       console.error(`Invalid URL format: ${url}`);
       return reject(new BadRequestError('Invalid cover image URL format.'));
     }
-
+    
+    if (!url.startsWith('https://')) {
+      return reject(new BadRequestError('The URL must be HTTPS for security reasons.'));
+    }
+    
     if (!urlValidationPattern.test(url)) {
       console.error(`Invalid image URL format: ${url}`);
       return reject(new BadRequestError('The URL does not point to a valid image.'));
     }
 
-    const protocol = url.startsWith('https') ? https : http;
-
-    const req = protocol.request(
+    const req = https.request(
       url,
       { method: 'HEAD', timeout: 5000 },
       (res) => {
