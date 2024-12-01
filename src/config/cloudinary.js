@@ -6,9 +6,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const DEFAULT_IMAGE_URL =
-  'https://res.cloudinary.com/dmbwryeam/image/upload/default_cover.jpg';
-const DEFAULT_IMAGE_PUBLIC_ID = 'default_cover';
+const DEFAULT_IMAGE_URL = process.env.DEFAULT_IMAGE_URL;
+const DEFAULT_IMAGE_PUBLIC_ID = process.env.DEFAULT_IMAGE_PUBLIC_ID;
 
 module.exports = {
   cloudinary,
