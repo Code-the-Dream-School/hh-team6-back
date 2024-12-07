@@ -66,42 +66,32 @@ const getSavedBooks = async (req, res, next) => {
 
     const booksWithDetails = [];
     
-    for (const book of savedBooks.books) {
-
-      const bookDetails = await Book.findOne({
-        $or: [{ isbn10: book.isbn10 }, { isbn13: book.isbn13 }],
+    for (const savedBook of savedBooks.books) {
+      const bookDetails = await Book.find({
+        $or: [
+          { isbn10: savedBook.isbn10 },
+          { isbn13: savedBook.isbn13 },
+        ],
       });
 
-      if (bookDetails) {
+      if (bookDetails.length > 0) {
         const bookData = {
-          isbn10: bookDetails.isbn10,
-          isbn13: bookDetails.isbn13,
-          title: bookDetails.title,
-          author: bookDetails.author,
+          isbn10: savedBook.isbn10,
+          isbn13: savedBook.isbn13,
+          title: bookDetails[0].title,
+          author: bookDetails[0].author,
           listings: [],
         };
 
-        const booksWithSameIsbn = await SavedBooks.find({
-          "books.isbn10": book.isbn10,
-          "books.isbn13": book.isbn13,
-        });
-
-        booksWithSameIsbn.forEach(savedBook => {
-          savedBook.books.forEach(savedBookDetail => {
-            if (
-              savedBookDetail.isbn10 === book.isbn10 ||
-              savedBookDetail.isbn13 === book.isbn13
-            ) {
-              bookData.listings.push({
-                userId: bookDetails.createdBy,
-                bookIdOriginal: bookDetails._id,
-                bookIdInSaved: savedBookDetail._id,
-                price: bookDetails.price,
-                isAvailable: bookDetails.isAvailable,
-                condition: bookDetails.condition,
-                coverImageUrl: bookDetails.coverImageUrl,
-              });
-            }
+        bookDetails.forEach((book) => {
+          bookData.listings.push({
+            userId: book.createdBy,
+            bookIdOriginal: book._id,
+            bookIdInSaved: savedBook._id,
+            price: book.price,
+            isAvailable: book.isAvailable,
+            condition: book.condition,
+            coverImageUrl: book.coverImageUrl,
           });
         });
 
