@@ -46,10 +46,10 @@ const login = async (req, res) => {
     }
 
     const token = user.createJWT();
-    const { email: userEmail, firstName, lastName } = user;
+    const { email: userEmail, firstName, lastName, location } = user;
     res
       .status(StatusCodes.OK)
-      .json({ user: { userEmail, firstName, lastName }, token });
+      .json({ user: { userEmail, firstName, lastName, location }, token });
     } catch (error) {
       console.error('Error logging in:', error.message);
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error logging in' });
