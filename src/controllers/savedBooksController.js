@@ -57,23 +57,20 @@ const addBookToSavedBooks = async (req, res, next) => {
 const getSavedBooks = async (req, res, next) => {
   try {
     const { userId } = req.user;
-
     const savedBooks = await SavedBooks.findOne({ user: userId });
 
     if (!savedBooks) {
+      console.log('No saved books found for this user.');
       return next(new NotFoundError('No saved books found for this user.'));
     }
 
     const booksWithDetails = [];
-    
+
     for (const savedBook of savedBooks.books) {
       const bookDetails = await Book.find({
-        $or: [
-          { isbn10: savedBook.isbn10 },
-          { isbn13: savedBook.isbn13 },
-        ],
+        $or: [{ isbn13: savedBook.isbn13 }, { isbn10: savedBook.isbn10 }],
       });
-
+    
       if (bookDetails.length > 0) {
         const bookData = {
           isbn10: savedBook.isbn10,
@@ -82,19 +79,24 @@ const getSavedBooks = async (req, res, next) => {
           author: bookDetails[0].author,
           listings: [],
         };
-
+    
         bookDetails.forEach((book) => {
-          bookData.listings.push({
-            userId: book.createdBy,
-            bookIdOriginal: book._id,
-            bookIdInSaved: savedBook._id,
-            price: book.price,
-            isAvailable: book.isAvailable,
-            condition: book.condition,
-            coverImageUrl: book.coverImageUrl,
-          });
+          if (
+            (book.isbn13 && book.isbn13 === savedBook.isbn13) ||
+            (book.isbn10 && book.isbn10 === savedBook.isbn10)
+          ) {
+            bookData.listings.push({
+              userId: book.createdBy,
+              bookIdOriginal: book._id,
+              bookIdInSaved: savedBook._id,
+              price: book.price,
+              isAvailable: book.isAvailable,
+              condition: book.condition,
+              coverImageUrl: book.coverImageUrl,
+            });
+          }
         });
-
+    
         booksWithDetails.push(bookData);
       }
     }
@@ -110,6 +112,9 @@ const getSavedBooks = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
 
 const deleteBookFromSavedBooks = async (req, res, next) => {
   try {

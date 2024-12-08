@@ -171,4 +171,14 @@ const BookSchema = new mongoose.Schema(
   }
 );
 
+BookSchema.pre('save', function(next) {
+  if (this.isbn10) {
+    this.isbn10 = this.isbn10.replace(/-/g, ''); 
+  }
+  if (this.isbn13) {
+    this.isbn13 = this.isbn13.replace(/-/g, ''); 
+  }
+  next();
+});
+
 module.exports = mongoose.model('Book', BookSchema);
