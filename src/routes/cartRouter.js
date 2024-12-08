@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getCart,
   addToCart,
+  deleteFromCart,
   createPaymentIntent,
   confirmPayment,
 } = require('../controllers/cartController');
@@ -15,6 +16,10 @@ router.get('/', auth, getCart);
 
 // Add an item to the cart
 router.post('/', auth, addToCart);
+
+// Delete an item from the cart
+router.delete('/:id', auth, deleteFromCart);
+
 
 // Create a payment intent
 router.post('/create-payment-intent', auth, createPaymentIntent);

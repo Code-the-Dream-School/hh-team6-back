@@ -1,123 +1,180 @@
 const Cart = require('../models/Cart');
 const Book = require('../models/Book');
+const { calculateCartTotal } = require('../utils/cartTotal');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { NotFoundError, BadRequestError } = require('../errors');
+const { StatusCodes } = require('http-status-codes');
 
-// Get the user's cart
+// get the cart
 const getCart = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-  
-    const cart = await Cart.findOne({ createdBy: userId }).populate('orderItems.book');
+
+    const cart = await Cart.findOne({ createdBy: userId }).populate(
+      'orderItems.book'
+    );
     if (!cart) {
-      return res.status(404).json({ message: 'Cart not found' });
+      throw new NotFoundError('Cart not found');
     }
-    res.status(200).json(cart);
+
+    const updatedItems = cart.orderItems.filter(
+      (item) => item.book && item.book.isAvailable
+    );
+
+    if (updatedItems.length !== cart.orderItems.length) {
+      cart.orderItems = updatedItems;
+      cart.total = calculateCartTotal(cart);
+
+      await cart.save();
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Some unavailable books were removed from your cart.',
+        cart,
+      });
+    }
+
+    res.status(StatusCodes.OK).json({ cart });
   } catch (error) {
     next(error);
   }
 };
 
-// Add an item to the cart
+// add book to catr
 const addToCart = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const { bookId, title, image, price, isAvailable } = req.body;
+    const { bookId } = req.body;
 
     const book = await Book.findById(bookId);
-    if (!book) {
-      return res.status(404).json({ message: 'Book not found' });
-    }
-
-    if (!book.isAvailable) {
-      return res.status(400).json({ message: 'Book is not available' });
+    if (!book || !book.isAvailable) {
+      throw new BadRequestError('Book is unavailable or does not exist');
     }
 
     let cart = await Cart.findOne({ createdBy: userId });
     if (!cart) {
-      cart = new Cart({
-        createdBy: userId,
-        tax: 0,
-        shippingFee: 0,
-        total: 0,
-        orderItems: [],
-        clientSecret: '',
-      });
+      cart = await Cart.create({ createdBy: userId });
     }
 
-    const existingItem = cart.orderItems.find(item => item.book.toString() === bookId);
-    if (existingItem) {
-      return res.status(400).json({ message: 'Item already in cart' });
-    }
+    const exists = cart.orderItems.some(
+      (item) => item.book.toString() === bookId
+    );
+    if (exists) throw new BadRequestError('Book is already in the cart');
 
-    cart.orderItems.push({ book: bookId, title, image, price, isAvailable });
+    cart.orderItems.push({
+      book: book._id,
+      title: book.title,
+      author: book.author,
+      coverImageUrl: book.coverImageUrl,
+      price: book.price,
+      isAvailable: book.isAvailable,
+    });
+
+    
+    cart.total = calculateCartTotal(cart);
+
     await cart.save();
-    res.status(201).json(cart);
+    res.status(201).json({ message: 'Book added to cart', cart });
   } catch (error) {
     next(error);
   }
 };
 
-// Create a Stripe payment intent
-const createPaymentIntent = async (req, res, next) => {
-  try {
-    const userId = req.user.userId;;
-    const cart = await Cart.findOne({ createdBy: userId });
 
-    if (!cart || cart.orderItems.length === 0) {
-      return res.status(400).json({ message: 'Your cart is empty' });
+// delete from cart
+const deleteFromCart = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { id: cartItemId } = req.params;
+
+    const cart = await Cart.findOne({ createdBy: userId });
+    if (!cart) {
+      throw new NotFoundError('Cart not found');
     }
 
-    // Calculate total amount
-    const totalAmount = Math.round(cart.total * 100); // Convert to cents
+    const filteredItems = cart.orderItems.filter(
+      (item) => item._id.toString() !== cartItemId
+    );
+    if (filteredItems.length === cart.orderItems.length) {
+      throw new NotFoundError('Book not found in the cart');
+    }
 
-    // Create payment intent
+    cart.orderItems = filteredItems;
+
+    cart.total = calculateCartTotal(cart);
+
+    await cart.save();
+    res
+      .status(StatusCodes.OK)
+      .json({ message: 'Item removed successfully', cart });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createPaymentIntent = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const cart = await Cart.findOne({ createdBy: userId }).populate(
+      'orderItems.book'
+    );
+
+    if (!cart || cart.orderItems.length === 0) {
+      throw new BadRequestError('Your cart is empty');
+    }
+
+    if (cart.clientSecret) {
+      return res
+        .status(StatusCodes.OK)
+        .json({ clientSecret: cart.clientSecret });
+    }
+
+    const totalAmount = Math.round(cart.total * 100);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmount,
       currency: 'usd',
-      automatic_payment_methods: { enabled: true },
     });
 
-    // Save payment intent details to cart
     cart.clientSecret = paymentIntent.client_secret;
     cart.paymentIntentId = paymentIntent.id;
     await cart.save();
 
-    res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    res
+      .status(StatusCodes.OK)
+      .json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     next(error);
   }
 };
 
-// Confirm payment success
+// Confirm payment
 const confirmPayment = async (req, res, next) => {
   try {
     const { paymentIntentId } = req.body;
-    console.log(req.body);
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== 'succeeded') {
-      return res.status(400).json({ message: 'Payment not successful' });
+      throw new BadRequestError('Payment was not successful');
     }
 
-    // Update cart status to 'paid'
     const cart = await Cart.findOneAndUpdate(
       { paymentIntentId },
       { status: 'paid' },
       { new: true }
     );
-
     if (!cart) {
-      return res.status(404).json({ message: 'Cart not found' });
+      throw new NotFoundError('Cart not found');
     }
 
-    res.status(200).json({ message: 'Payment successful', cart });
+    res.status(StatusCodes.OK).json({ message: 'Payment successful', cart });
   } catch (error) {
     next(error);
   }
 };
+
 module.exports = {
   getCart,
   addToCart,
+  deleteFromCart,
   createPaymentIntent,
   confirmPayment,
 };
