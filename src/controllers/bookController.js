@@ -61,10 +61,12 @@ const getAllBooks = async (req, res, next) => {
       searchConditions.push({ author: { $regex: author, $options: 'i' } });
     }
     if (isbn) {
-      searchConditions.push(
-        { isbn10: { $regex: isbn, $options: 'i' } },
-        { isbn13: { $regex: isbn, $options: 'i' } }
-      );
+      searchConditions.push({
+        $or: [
+          { isbn10: { $regex: isbn, $options: 'i' } },
+          { isbn13: { $regex: isbn, $options: 'i' } }
+        ]
+      });
     }
 
     if (searchConditions.length > 0) {
