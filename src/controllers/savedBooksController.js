@@ -57,11 +57,16 @@ const addBookToSavedBooks = async (req, res, next) => {
 const getSavedBooks = async (req, res, next) => {
   try {
     const { userId } = req.user;
+    const { sort = '-addedAt' } = req.query;
     const savedBooks = await SavedBooks.findOne({ user: userId });
 
-    if (!savedBooks) {
-      console.log('No saved books found for this user.');
-      return next(new NotFoundError('No saved books found for this user.'));
+    if (!savedBooks || savedBooks.books.length === 0) {
+      return res.status(StatusCodes.OK).json({
+        msg: 'No saved books found for this user.',
+        savedBooks: {
+          books: [],
+        },
+      });
     }
 
     const booksWithDetails = [];
@@ -77,6 +82,7 @@ const getSavedBooks = async (req, res, next) => {
           isbn13: savedBook.isbn13,
           title: bookDetails[0].title,
           author: bookDetails[0].author,
+          addedAt: savedBook.addedAt,
           listings: [],
         };
     
@@ -101,6 +107,15 @@ const getSavedBooks = async (req, res, next) => {
       }
     }
 
+    const sortField = sort.startsWith('-') ? sort.substring(1) : sort;
+    const sortDirection = sort.startsWith('-') ? -1 : 1;
+
+    booksWithDetails.sort((a, b) => {
+      if (a[sortField] < b[sortField]) return -1 * sortDirection;
+      if (a[sortField] > b[sortField]) return 1 * sortDirection;
+      return 0;
+    });
+
     res.status(StatusCodes.OK).json({
       msg: 'Saved books fetched successfully.',
       savedBooks: {
@@ -112,9 +127,6 @@ const getSavedBooks = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
 
 const deleteBookFromSavedBooks = async (req, res, next) => {
   try {
