@@ -2,7 +2,6 @@ require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-const app = express();
 const cors = require('cors');
 const favicon = require('express-favicon');
 const logger = require('morgan');
@@ -13,6 +12,8 @@ const savedBooksRouter = require('./routes/savedBooksRouter.js');
 const errorHandlerMiddleware = require('./middleware/error-handler.js');
 const connectDB = require('./db/db.js');
 connectDB();
+
+const app = express();
 
 // middleware
 app.use(cors());

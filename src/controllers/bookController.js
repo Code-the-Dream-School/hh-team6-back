@@ -119,11 +119,15 @@ const getBook = async (req, res, next) => {
 const createBook = async (req, res, next) => {
   try {
     const { coverImageUrl, isbn10, isbn13, ...bookData } = req.body;
-    
-    if(!isbn10 && !isbn13){
-      return next(new BadRequestError('At least one ISBN (ISBN-10 or ISBN-13) must be provided.'));
+
+    if (!isbn10 && !isbn13) {
+      return next(
+        new BadRequestError(
+          'At least one ISBN (ISBN-10 or ISBN-13) must be provided.'
+        )
+      );
     }
-    
+
     if (coverImageUrl && !(await validateImageURL(coverImageUrl))) {
       return next(new BadRequestError('Invalid cover image URL format.'));
     }
