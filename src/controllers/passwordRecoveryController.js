@@ -8,12 +8,12 @@ const requestPasswordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
-      throw new BadRequestError('Please provide an email');
+      throw new BadRequestError('Please provide an email.');
     }
 
     const user = await User.findOne({ email });
-    if (!user) {console.log('User not found for email:', email);
-      throw new BadRequestError('User with this email does not exist');
+    if (!user) {
+      throw new BadRequestError('Invalid Credentials.');
     }
 
     const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -22,7 +22,7 @@ const requestPasswordReset = async (req, res, next) => {
 
     const resetLink = `${process.env.FRONTEND_URL}/password/reset?token=${resetToken}`;
     if (!process.env.FRONTEND_URL) {
-      throw new BadRequestError('FRONTEND_URL is not available in .env');
+      throw new BadRequestError('Frontend URL is not available in .env');
     }
 
     const resetMessage = `
