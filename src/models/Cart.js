@@ -7,7 +7,7 @@ const SingleCartItemSchema = new mongoose.Schema(
     coverImageUrl: { type: String, required: true },
     price: { type: Number, required: true },
     book: { type: mongoose.Schema.ObjectId, ref: 'Book', required: true },
-    isAvailable: { type: Boolean, default: true },
+    isAvailable: { type: Boolean, required: true, default: true },
   },
   { timestamps: true }
 );
@@ -26,7 +26,7 @@ const CartSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.ObjectId, ref: 'User', required: true },
     clientSecret: { type: String, default: '' },
     paymentIntentId: { type: String },
-    expiresAt: { type: Date, default: () => Date.now() + 24 * 60 * 60 * 1000 },
+    expiresAt: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) },
   },
   { timestamps: true }
 );

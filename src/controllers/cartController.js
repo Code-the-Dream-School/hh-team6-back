@@ -28,7 +28,7 @@ const getCart = async (req, res, next) => {
       await cart.save();
 
       return res.status(StatusCodes.OK).json({
-        message: 'Some unavailable books were removed from your cart.',
+        msg: 'Some unavailable books were removed from your cart.',
         cart,
       });
     }
@@ -39,7 +39,6 @@ const getCart = async (req, res, next) => {
   }
 };
 
-// add book to catr
 const addToCart = async (req, res, next) => {
   try {
     const userId = req.user.userId;
@@ -86,26 +85,20 @@ const deleteFromCart = async (req, res, next) => {
     const userId = req.user.userId;
     const { id: cartItemId } = req.params;
 
-    const cart = await Cart.findOne({ createdBy: userId });
-    if (!cart) {
+    const updatedCart = await Cart.findOneAndUpdate(
+      { createdBy: userId },
+      { $pull: { orderItems: { _id: cartItemId } } },
+      { new: true }
+    );
+
+    if (!updatedCart) {
       throw new NotFoundError('Cart not found');
     }
 
-    const filteredItems = cart.orderItems.filter(
-      (item) => item._id.toString() !== cartItemId
-    );
-    if (filteredItems.length === cart.orderItems.length) {
-      throw new NotFoundError('Book not found in the cart');
-    }
+    updatedCart.total = calculateCartTotal(updatedCart);
 
-    cart.orderItems = filteredItems;
-
-    cart.total = calculateCartTotal(cart);
-
-    await cart.save();
-    res
-      .status(StatusCodes.OK)
-      .json({ message: 'Item removed successfully', cart });
+    await updatedCart.save();
+    res.status(StatusCodes.OK).json({ msg: 'Item removed successfully', cart });
   } catch (error) {
     next(error);
   }
@@ -120,6 +113,11 @@ const createPaymentIntent = async (req, res, next) => {
 
     if (!cart || cart.orderItems.length === 0) {
       throw new BadRequestError('Your cart is empty');
+    }
+    if (cart.status === 'paid') {
+      return res
+        .status(StatusCodes.OK)
+        .json({ msg: 'Payment already processed', cart });
     }
 
     if (cart.clientSecret) {
@@ -165,7 +163,7 @@ const confirmPayment = async (req, res, next) => {
       throw new NotFoundError('Cart not found');
     }
 
-    res.status(StatusCodes.OK).json({ message: 'Payment successful', cart });
+    res.status(StatusCodes.OK).json({ msg: 'Payment successful', cart });
   } catch (error) {
     next(error);
   }
