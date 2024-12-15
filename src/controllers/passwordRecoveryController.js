@@ -1,4 +1,4 @@
-const { BadRequestError } = require('../errors');
+const { BadRequestError, UnauthenticatedError } = require('../errors');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 const jwt = require('jsonwebtoken');
@@ -20,6 +20,12 @@ const requestPasswordReset = async (req, res, next) => {
       expiresIn: '1h',
     });
 
+    console.log(resetToken);
+
+    user.resetToken = resetToken;
+    user.resetTokenExpires = Date.now() + 60 * 60 * 1000;
+    await user.save();
+
     const resetLink = `${process.env.FRONTEND_URL}/password/reset?token=${resetToken}`;
     if (!process.env.FRONTEND_URL) {
       throw new BadRequestError('Frontend URL is not available in .env');
@@ -36,13 +42,47 @@ const requestPasswordReset = async (req, res, next) => {
 
     await sendEmail(user.email, 'Password Reset Request', resetMessage);
 
-    res.status(StatusCodes.OK).json({ msg: 'Reset link sent to email' });
+    res
+       .status(StatusCodes.OK)
+       .json({ msg: 'Reset link sent to email' });
   } catch (error) {
     console.error('Error sending reset email:', error.message);
     next(error);
   }
 };
 
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      throw new BadRequestError('Token and new password are required');
+    }
+
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new UnauthenticatedError('Invalid or expired token');
+    }
+
+    user.password = newPassword;
+    user.resetToken = undefined;
+    user.resetTokenExpires = undefined;
+
+    await user.save();
+
+    res
+      .status(StatusCodes.OK)
+      .json({ msg: 'Password has been successfully reset' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   requestPasswordReset,
+  resetPassword,
 };
