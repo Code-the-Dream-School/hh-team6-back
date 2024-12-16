@@ -7,7 +7,8 @@ const favicon = require('express-favicon');
 const logger = require('morgan');
 
 const userRouter = require('./routes/userRouter.js');
-const booksRouter  = require('./routes/booksRouter.js');
+const booksRouter = require('./routes/booksRouter.js');
+const cartRouter = require('./routes/cartRouter.js');
 const savedBooksRouter = require('./routes/savedBooksRouter.js');
 const errorHandlerMiddleware = require('./middleware/error-handler.js');
 const connectDB = require('./db/db.js');
@@ -28,6 +29,7 @@ app.use(express.static('public'));
 // routes
 app.use('/api/v1', userRouter);
 app.use('/api/v1/books', booksRouter);
+app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/saved-books', savedBooksRouter);
 
 app.use((req, res, next) => {
