@@ -26,7 +26,7 @@ const requestPasswordReset = async (req, res, next) => {
     user.resetTokenExpires = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${process.env.FRONTEND_URL}/password/reset?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/password/edit?token=${resetToken}`;
     if (!process.env.FRONTEND_URL) {
       throw new BadRequestError('Frontend URL is not available in .env');
     }
