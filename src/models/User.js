@@ -33,6 +33,8 @@ const UserSchema = new mongoose.Schema({
     type: String,
     maxlength: 100,
   },
+  resetToken: String,
+  resetTokenExpires: Date,
 });
 
 UserSchema.pre('save', async function () {
