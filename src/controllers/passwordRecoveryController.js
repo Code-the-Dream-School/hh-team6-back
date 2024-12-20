@@ -20,12 +20,6 @@ const requestPasswordReset = async (req, res, next) => {
       expiresIn: '1h',
     });
 
-    console.log(resetToken);
-
-    user.resetToken = resetToken;
-    user.resetTokenExpires = Date.now() + 60 * 60 * 1000;
-    await user.save();
-
     const resetLink = `${process.env.FRONTEND_URL}/password/edit?token=${resetToken}`;
     if (!process.env.FRONTEND_URL) {
       throw new BadRequestError('Frontend URL is not available in .env');
@@ -41,10 +35,11 @@ const requestPasswordReset = async (req, res, next) => {
           `;
 
     await sendEmail(user.email, 'Password Reset Request', resetMessage);
+    user.resetToken = resetToken;
+    user.resetTokenExpires = Date.now() + 60 * 60 * 1000;
+    await user.save();
 
-    res
-       .status(StatusCodes.OK)
-       .json({ msg: 'Reset link sent to email' });
+    res.status(StatusCodes.OK).json({ msg: 'Reset link sent to email' });
   } catch (error) {
     console.error('Error sending reset email:', error.message);
     next(error);
