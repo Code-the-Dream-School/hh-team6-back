@@ -27,9 +27,12 @@ const register = async (req, res) => {
     res.status(StatusCodes.CREATED).json({ userData, token });
   } catch (error) {
     console.error(error);
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.message });
+    res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ error: error.message });
   }
 };
+
 
 const login = async (req, res) => {
   try {
@@ -38,24 +41,26 @@ const login = async (req, res) => {
     if (!email || !password) {
       throw new BadRequestError('Please provide email and password');
     }
+
     const user = await User.findOne({ email });
-
-    const isPasswordCorrect = user && (await user.comparePassword(password));
-    if (!user || !isPasswordCorrect) {
-      throw new UnauthenticatedError('Invalid Credentials');
-    }
-
-    const token = user.createJWT();
-    const { email: userEmail, firstName, lastName, location } = user;
-    res
-      .status(StatusCodes.OK)
-      .json({ user: { userEmail, firstName, lastName, location }, token });
-    } catch (error) {
-      console.error('Error logging in:', error.message);
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error logging in' });
-    }
+    if(!user) {
+        throw new UnauthenticatedError('Invalid Credentials');
+    };
   
+    const isPasswordCorrect = await user.comparePassword(password);
+    if(!isPasswordCorrect){
+        throw new UnauthenticatedError('Invalid Credentials');
+    };
+    const token = user.createJWT();
+    const {password:_, _id, __v, ...userData } = user.toObject();
+
+    res.status(StatusCodes.OK).json({ user: userData, token });
+  } catch (error) {
+    console.error('Error during login:', error.message);
+    res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
+  }
 };
+
 const logout = (req, res) => {
   try {
   res
