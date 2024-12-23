@@ -93,13 +93,12 @@ const getSavedBooks = async (req, res, next) => {
             (book.isbn13 && book.isbn13 === savedBook.isbn13) ||
             (book.isbn10 && book.isbn10 === savedBook.isbn10)
           ) {
-            const user = await User.findById(book.createdBy).select(
-              'firstName lastName'
-            );
+            const user = await User.findById(book.createdBy).select('firstName lastName location');
 
             bookData.listings.push({
               sellerId: book.createdBy,
               sellerName: user ? `${user.firstName} ${user.lastName}` : null,
+              sellerLocation: user.location || 'Location not provided', 
               bookIdOriginal: book._id,
               price: book.price,
               isAvailable: book.isAvailable,
