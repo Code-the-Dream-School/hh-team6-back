@@ -2,6 +2,7 @@ const { StatusCodes } = require('http-status-codes');
 const { BadRequestError, NotFoundError } = require('../errors');
 const SavedBooks = require('../models/SavedBooks');
 const Book = require('../models/Book');
+const User = require('../models/User');
 
 const addBookToSavedBooks = async (req, res, next) => {
   try {
@@ -75,7 +76,7 @@ const getSavedBooks = async (req, res, next) => {
       const bookDetails = await Book.find({
         $or: [{ isbn13: savedBook.isbn13 }, { isbn10: savedBook.isbn10 }],
       });
-    
+
       if (bookDetails.length > 0) {
         const bookData = {
           isbn10: savedBook.isbn10,
@@ -83,26 +84,31 @@ const getSavedBooks = async (req, res, next) => {
           title: bookDetails[0].title,
           author: bookDetails[0].author,
           addedAt: savedBook.addedAt,
+          savedBookId: savedBook._id,
           listings: [],
         };
-    
-        bookDetails.forEach((book) => {
+
+        for (const book of bookDetails) {
           if (
             (book.isbn13 && book.isbn13 === savedBook.isbn13) ||
             (book.isbn10 && book.isbn10 === savedBook.isbn10)
           ) {
+            const user = await User.findById(book.createdBy).select(
+              'firstName lastName'
+            );
+
             bookData.listings.push({
-              userId: book.createdBy,
+              sellerId: book.createdBy,
+              sellerName: user ? `${user.firstName} ${user.lastName}` : null,
               bookIdOriginal: book._id,
-              bookIdInSaved: savedBook._id,
               price: book.price,
               isAvailable: book.isAvailable,
               condition: book.condition,
               coverImageUrl: book.coverImageUrl,
             });
           }
-        });
-    
+        }
+
         booksWithDetails.push(bookData);
       }
     }
