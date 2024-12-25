@@ -11,6 +11,9 @@ const booksRouter = require('./routes/booksRouter.js');
 const cartRouter = require('./routes/cartRouter.js');
 const savedBooksRouter = require('./routes/savedBooksRouter.js');
 const errorHandlerMiddleware = require('./middleware/error-handler.js');
+const swaggerUI = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load('./swagger.yaml');
 const connectDB = require('./db/db.js');
 connectDB();
 
@@ -26,6 +29,7 @@ app.use(logger('dev'));
 app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(express.static('public'));
 
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument))
 // routes
 app.use('/api/v1', userRouter);
 app.use('/api/v1/books', booksRouter);

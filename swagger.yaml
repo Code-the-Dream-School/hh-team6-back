@@ -1,0 +1,375 @@
+openapi: 3.0.0
+info:
+  title: Re:Books API
+  description: API for managing selling books from user's personal libraries.
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8000/api/v1'
+    description: Development server
+
+paths:
+  /register:
+    post:
+      tags:
+        - Authentication
+      summary: Register User
+      operationId: RegisterUser
+      requestBody:
+        description: User registration data
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  example: bob
+                  description: User's first name
+                lastName:
+                  type: string
+                  example: white
+                  description: User's last name
+                email:
+                  type: string
+                  format: email
+                  example: bob@gmail.com
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  example: secret
+                  description: User's password
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Registration successful
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Email is required
+      security: []
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: User Login
+      operationId: LoginUser
+      requestBody:
+        description: User login credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  example: secretpassword
+                  description: User's password
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: User's information (excluding sensitive data)
+                  token:
+                    type: string
+                    example: "jwt-token"
+                    description: JWT token for authorization
+        '400':
+          description: Bad Request - Missing email or password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please provide email and password
+        '401':
+          description: Unauthorized - Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid Credentials
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: An unexpected error occurred
+      security: []
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout User
+      operationId: LogoutUser
+      responses:
+        '200':
+          description: User logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successful
+                    description: Confirmation message indicating successful logout
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Logout failed
+                    description: Error message indicating logout failure
+      security: []
+  /update:
+    patch:
+      tags:
+        - Authentication
+      summary: Update User Information
+      operationId: UpdateUser
+      requestBody:
+        required: true
+        description: A JSON object specifying the user fields to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  example: John
+                  description: User's first name
+                lastName:
+                  type: string
+                  example: Doe
+                  description: User's last name
+                location:
+                  type: string
+                  example: New York
+                  description: User's location
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      firstName:
+                        type: string
+                        example: John
+                      lastName:
+                        type: string
+                        example: Doe
+                      email:
+                        type: string
+                        example: john.doe@example.com
+                      location:
+                        type: string
+                        example: New York
+        '400':
+          description: Bad request (e.g., no valid fields to update or empty location)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: No valid fields to update
+        '401':
+          description: Unauthorized (e.g., missing or invalid token)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Error updating user
+      security:
+        - BearerAuth: []
+  /forgot-password:
+    post:
+      tags:
+        - Password Recovery
+      summary: Request a password reset link
+      operationId: RequestPasswordReset
+      description: |
+        Initiates the process of resetting the user's password by sending a password reset link to the provided email. The link will contain a JWT token which is valid for 1 hour.
+        The token is used to verify the user’s identity and allows the user to securely reset their password.
+      requestBody:
+        description: Email address to request password reset
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The email address of the user who wants to reset their password.
+              required:
+                - email
+      responses:
+        '200':
+          description: Password reset link sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: Reset link sent to email
+        '400':
+          description: Bad request due to missing or invalid email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please provide an email.
+        '404':
+          description: Email not found in the system
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid Credentials.
+      security: []
+  /password-reset:
+    post:
+      tags:
+        - Password Recovery
+      summary: Reset the password using a reset token
+      operationId: ResetPassword
+      description: |
+        This endpoint allows a user to reset their password using a valid JWT reset token received via email. The token verifies the user's identity and ensures that the reset process is secure.
+        If the token is expired or invalid, the request will be rejected.
+      requestBody:
+        description: Token and new password to reset the user's password
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: The token received in the password reset email.
+                newPassword:
+                  type: string
+                  description: The new password the user wants to set.
+              required:
+                - token
+                - newPassword
+      responses:
+        '200':
+          description: Password successfully reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: Password has been successfully reset
+        '400':
+          description: Bad request due to missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Token and new password are required
+        '401':
+          description: Unauthorized due to invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid or expired token
+      security: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Endpoints related to user authentication
+  - name: Password Recovery
+    description: Endpoints related to password recovery
+  - name: Books
+    description: Endpoints related to managing books
