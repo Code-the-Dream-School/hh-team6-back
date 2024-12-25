@@ -356,7 +356,317 @@ paths:
                     type: string
                     example: Invalid or expired token
       security: []
+  /books:
+    get:
+      summary: Get all books
+      description: Fetches a list of books with optional filters.
+      tags:
+        - Books
+      parameters:
+        - name: query
+          in: query
+          description: General search query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          description: Filter by book title
+          required: false
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: Filter by author
+          required: false
+          schema:
+            type: string
+        - name: isbn
+          in: query
+          description: Filter by ISBN
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Limit the number of books returned
+          required: false
+          schema:
+            type: integer
+            default: 12
+        - name: skip
+          in: query
+          description: Skip the first N books (pagination)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: ageCategory
+          in: query
+          description: Filter by age category
+          required: false
+          schema:
+            type: string
+        - name: condition
+          in: query
+          description: Filter by condition
+          required: false
+          schema:
+            type: string
+        - name: genre
+          in: query
+          description: Filter by genre
+          required: false
+          schema:
+            type: string
+        - name: coverType
+          in: query
+          description: Filter by cover type
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting parameter
+          required: false
+          schema:
+            type: string
+            default: '-createdAt'
+        - name: userId
+          in: query
+          description: Filter by user ID (owner of the books)
+          required: false
+          schema:
+            type: string
+        - name: isAvailable
+          in: query
+          description: Filter by availability (true/false)
+          required: false
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+      responses:
+        '200':
+          description: Successfully retrieved books
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+                  count:
+                    type: integer
+                    example: 12
+        '400':
+          description: Invalid query parameters
+        '500':
+          description: Internal server error
+      security: []
+  /books/{id}:
+    get:
+      summary: Get a single book
+      description: Fetches a book by its ID.
+      tags:
+        - Books
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the book
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved the book
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found
+        '500':
+          description: Internal server error
+      security: []
+    patch:
+      summary: Update a book
+      description: Updates the details of an existing book.
+      tags:
+        - Books
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the book to be updated
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Book data to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '200':
+          description: Successfully updated the book
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          description: Invalid data provided
+        '404':
+          description: Book not found
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete a book
+      description: Deletes a book by its ID.
+      tags:
+        - Books
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the book to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully deleted the book
+        '404':
+          description: Book not found
+        '500':
+          description: Internal server error
+
+  /books/:
+    post:
+      summary: Create a new book
+      description: Adds a new book to the collection.
+      tags:
+        - Books
+      requestBody:
+        description: Book data to create a new book
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '201':
+          description: Book created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          description: Invalid data provided
+        '500':
+          description: Internal Server Error
+
 components:
+  schemas:
+    Book:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The title of the book
+          minLength: 2
+          maxLength: 100
+        author:
+          type: string
+          description: The author of the book
+          minLength: 2
+          maxLength: 100
+        publisher:
+          type: string
+          description: The publisher of the book
+          minLength: 2
+          maxLength: 100
+        publishedYear:
+          type: integer
+          description: The year the book was published
+          minimum: 1440
+          maximum: { "$ref": "#/components/examples/CurrentYear" }
+        pages:
+          type: integer
+          description: The number of pages in the book
+          minimum: 2
+        isbn10:
+          type: string
+          description: ISBN-10 identifier
+        isbn13:
+          type: string
+          description: ISBN-13 identifier
+        description:
+          type: string
+          description: A brief description of the book
+        genre:
+          type: string
+          description: The genre of the book
+        ageCategory:
+          type: string
+          description: The age category for the book
+        condition:
+          type: string
+          description: The condition of the book (new, used)
+        coverType:
+          type: string
+          description: The cover type of the book
+        language:
+          type: string
+          description: The language of the book
+        price:
+          type: number
+          description: The price of the book
+        isAvailable:
+          type: boolean
+          description: Availability status of the book (in stock or sold)
+        coverImageUrl:
+          type: string
+          description: URL of the book's cover image
+          example: "https://example.com/cover.jpg"
+      required:
+        - title
+        - author
+        - publisher
+        - publishedYear
+        - pages
+        - isbn13
+        - description
+        - price
+        - genre
+        - ageCategory
+        - condition
+        - coverType
+      example:
+        title: "The Golden Compass"
+        author: "Philip Pullman"
+        publisher: "Scholastic"
+        publishedYear: 1995
+        pages: 399
+        isbn10: "0590616769"
+        isbn13: "978-0590616769"
+        description: "The first book in Philip Pullman’s award-winning trilogy, His Dark Materials."
+        genre: "Fantasy"
+        ageCategory: "Teens & Young Adult"
+        condition: "New"
+        coverType: "Hardcover"
+        language: "English"
+        price: 9.99
+        isAvailable: true
+        coverImageUrl: "https://example.com/cover.jpg"
+  examples:
+    CurrentYear:
+      value: 2024
+  
   securitySchemes:
     BearerAuth:
       type: http
