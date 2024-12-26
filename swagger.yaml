@@ -43,24 +43,8 @@ paths:
       responses:
         '201':
           description: User registered successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Registration successful
         '400':
           description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Email is required
       security: []
   /login:
     post:
@@ -89,48 +73,12 @@ paths:
       responses:
         '200':
           description: User logged in successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user:
-                    type: object
-                    description: User's information (excluding sensitive data)
-                  token:
-                    type: string
-                    example: "jwt-token"
-                    description: JWT token for authorization
         '400':
           description: Bad Request - Missing email or password
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Please provide email and password
         '401':
           description: Unauthorized - Invalid credentials
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid Credentials
         '500':
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: An unexpected error occurred
       security: []
   /logout:
     post:
@@ -141,26 +89,8 @@ paths:
       responses:
         '200':
           description: User logged out successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Logout successful
-                    description: Confirmation message indicating successful logout
         '500':
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Logout failed
-                    description: Error message indicating logout failure
       security: []
   /update:
     patch:
@@ -191,56 +121,12 @@ paths:
       responses:
         '200':
           description: User updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user:
-                    type: object
-                    properties:
-                      firstName:
-                        type: string
-                        example: John
-                      lastName:
-                        type: string
-                        example: Doe
-                      email:
-                        type: string
-                        example: john.doe@example.com
-                      location:
-                        type: string
-                        example: New York
         '400':
           description: Bad request (e.g., no valid fields to update or empty location)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: No valid fields to update
         '401':
           description: Unauthorized (e.g., missing or invalid token)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unauthorized
         '500':
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Error updating user
       security:
         - BearerAuth: []
   /forgot-password:
@@ -269,34 +155,10 @@ paths:
       responses:
         '200':
           description: Password reset link sent successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-                    example: Reset link sent to email
         '400':
           description: Bad request due to missing or invalid email
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Please provide an email.
         '404':
           description: Email not found in the system
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid Credentials.
       security: []
   /password-reset:
     post:
@@ -327,34 +189,10 @@ paths:
       responses:
         '200':
           description: Password successfully reset
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-                    example: Password has been successfully reset
         '400':
           description: Bad request due to missing or invalid parameters
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Token and new password are required
         '401':
           description: Unauthorized due to invalid or expired token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid or expired token
       security: []
   /books:
     get:
@@ -569,6 +407,36 @@ paths:
           description: Invalid data provided
         '500':
           description: Internal Server Error
+  /saved-books/:
+    post:
+      summary: Add a book to Saved books
+      description: Add a book to the user's saved books. At least one ISBN (ISBN-10 or ISBN-13) must be provided.
+      tags: 
+        - Saved Books
+      requestBody:
+        description: ISBN data to add to SavedBooks
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isbn10:
+                  type: string
+                  example: 014032609X
+                  description: ISBN-10 of the book
+                isbn13:
+                  type: string
+                  example: 9780140326093
+                  description: ISBN-13 of the book
+      responses:
+        '201':
+          description: Book added successfully
+        '400':
+          description: At least one ISBN (ISBN-10 or ISBN-13) must be provided
+        '500':
+          description: Internal server error
+
 
 components:
   schemas:
@@ -682,4 +550,6 @@ tags:
   - name: Password Recovery
     description: Endpoints related to password recovery
   - name: Books
+    description: Endpoints related to managing books
+  - name: Saved Books
     description: Endpoints related to managing books
