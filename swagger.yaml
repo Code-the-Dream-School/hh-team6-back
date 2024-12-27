@@ -407,10 +407,40 @@ paths:
           description: Invalid data provided
         '500':
           description: Internal Server Error
-  /saved-books/:
+  /saved-books:
+    get:
+      summary: Get the list of user's saved books
+      tags: 
+        - Saved Books
+      parameters:
+      - in: query
+        name: sort
+        schema:
+          type: string
+          example: '-addedAt'
+          description: Sort order for the saved books. Use `-` prefix for descending order (e.g., `-addedAt`).
+      responses:
+          '200':
+            description: Book removed from saved list successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    msg:
+                      type: string
+                      example: Book removed from saved list successfully.
+                    savedBooks:
+                      type: object
+                      description: Updated saved books list
+          '400':
+            description: Book ID is required to remove a book
+          '404':
+            description: No saved books found for this user or book not found in saved list
+          '500':
+            description: Internal server error
     post:
       summary: Add a book to Saved books
-      description: Add a book to the user's saved books. At least one ISBN (ISBN-10 or ISBN-13) must be provided.
       tags: 
         - Saved Books
       requestBody:
@@ -436,6 +466,43 @@ paths:
           description: At least one ISBN (ISBN-10 or ISBN-13) must be provided
         '500':
           description: Internal server error
+    delete:
+      summary: Delete a book from Saved books
+      tags: 
+        - Saved Books
+      requestBody:
+        description: Book Id that it has in Saved books
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                savedBookId:
+                  type: string
+                  example: 676c9cb5cfa4ca1f72049912
+                  description: Id of the book in Saved books
+      responses:
+          '200':
+            description: Book removed from saved list successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    msg:
+                      type: string
+                      example: Book removed from saved list successfully.
+                    savedBooks:
+                      type: object
+                      description: Updated saved books list
+          '400':
+            description: Book ID is required to remove a book
+          '404':
+            description: No saved books found for this user or book not found in saved list
+          '500':
+            description: Internal server error
+
 
 
 components:
