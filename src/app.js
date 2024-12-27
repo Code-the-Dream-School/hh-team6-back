@@ -10,6 +10,7 @@ const userRouter = require('./routes/userRouter.js');
 const booksRouter = require('./routes/booksRouter.js');
 const cartRouter = require('./routes/cartRouter.js');
 const savedBooksRouter = require('./routes/savedBooksRouter.js');
+const messagesRouter = require('./routes/MessagesRouter.js');
 const errorHandlerMiddleware = require('./middleware/error-handler.js');
 const connectDB = require('./db/db.js');
 connectDB();
@@ -31,6 +32,7 @@ app.use('/api/v1', userRouter);
 app.use('/api/v1/books', booksRouter);
 app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/saved-books', savedBooksRouter);
+app.use('/api/v1/messages', messagesRouter);
 
 app.use((req, res, next) => {
     const error = new Error(`Cannot ${req.method} ${req.originalUrl}`);
