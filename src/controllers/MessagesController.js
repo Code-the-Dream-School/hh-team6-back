@@ -34,6 +34,107 @@ const createChat = async (req, res, next) => {
   }
 };
 
+const getAllUserChats = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    if (!userId) {
+      throw new BadRequestError('User ID is required');
+    }
+
+    const chats = await Chat.find({ participants: userId })
+      .populate('participants', 'firstName lastName')
+      .select('-__v')
+      .sort({ 'lastMessage.timestamp': -1, createdAt: -1 });
+
+    if (!chats || chats.length === 0) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ msg: 'No chats found for this user' });
+    }
+    // const usersChats = chats.map(chat => ({
+    //     chatId: chat._id,
+    //     participants: chat.participants.map(user => ({
+    //       firstName: user.firstName,
+    //       lastName: user.lastName,
+    //     })),
+    //     createdAt: chat.createdAt,
+    //   }));
+
+    res.status(StatusCodes.OK).json(chats);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const sendMessage = async (req, res, next) => {
+  try {
+    const { userId: senderId } = req.user;
+    const { chatId, message } = req.body;
+
+    if (!chatId || !message) {
+      return next(new BadRequestError('Chat ID and message are required'));
+    }
+
+    const newMessage = new Message({
+      chat: chatId,
+      sender: senderId,
+      message: message,
+    });
+
+    await newMessage.save();
+
+    const populatedMessage = await Message.findById(newMessage._id)
+      .select('-__v')
+      .populate('sender', 'firstName lastName');
+
+    res.status(StatusCodes.CREATED).json(populatedMessage);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getChatWithMessages = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { chatId } = req.params;
+
+    if (!chatId) {
+      return next(new BadRequestError('Chat ID is required'));
+    }
+
+    const chat = await Chat.findById(chatId).select('-__v').populate({
+      path: 'participants',
+      select: 'firstName lastName',
+    });
+
+    if (!chat) {
+      return next(new NotFoundError('Chat not found'));
+    }
+
+    if (
+      !chat.participants.some((participant) => participant._id.equals(userId))
+    ) {
+      return next(new NotFoundError('User is not a participant of this chat'));
+    }
+
+    const messages = await Message.find({ chat: chatId }).select('-__v')
+      .populate({
+        path: 'sender',
+        select: 'firstName lastName',
+      })
+      .sort({ timestamp: 1 });
+
+    res.status(StatusCodes.OK).json({ chat, messages });
+  } catch (error) {
+    console.log('Error occurred:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   createChat,
+  getAllUserChats,
+  sendMessage,
+  getChatWithMessages
 };
