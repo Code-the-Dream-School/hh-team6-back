@@ -71,7 +71,7 @@ const sendMessage = async (req, res, next) => {
   try {
     const { userId: senderId } = req.user;
     const { chatId, message } = req.body;
-
+// chatid from req.params
     if (!chatId || !message) {
       return next(new BadRequestError('Chat ID and message are required'));
     }
