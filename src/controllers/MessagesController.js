@@ -54,13 +54,15 @@ const getAllUserChats = async (req, res, next) => {
     }
 
     const chatsData = chats.map((chat) => {
-        const otherParticipant = chat.participants.find((participant) => participant._id.toString() !== userId);
+      const otherParticipant = chat.participants.find(
+        (participant) => participant._id.toString() !== userId
+      );
 
-        return {
-            chatId: chat._id,
-            chatPeerId: otherParticipant._id,
-            chatPeerName: `${otherParticipant.firstName} ${otherParticipant.lastName}`
-        };
+      return {
+        chatId: chat._id,
+        chatPeerId: otherParticipant._id,
+        chatPeerName: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
+      };
     });
 
     res.status(StatusCodes.OK).json(chatsData);
@@ -72,8 +74,9 @@ const getAllUserChats = async (req, res, next) => {
 const sendMessage = async (req, res, next) => {
   try {
     const { userId: senderId } = req.user;
-    const { chatId, message } = req.body;
-// chatid from req.params
+    const { message } = req.body;
+    const { chatId } = req.params;
+    
     if (!chatId || !message) {
       return next(new BadRequestError('Chat ID and message are required'));
     }
