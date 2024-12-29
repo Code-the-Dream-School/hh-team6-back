@@ -4,15 +4,18 @@ const { calculateCartTotal } = require('../utils/cartTotal');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
-
-// get the cart
 const getCart = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
-    const cart = await Cart.findOne({ createdBy: userId }).populate(
-      'orderItems.book'
-    );
+    const cart = await Cart.findOne({ createdBy: userId }).populate({
+      path: 'orderItems.book',
+      populate: {
+        path: 'createdBy',
+        select: 'firstName lastName location',
+      },
+    });
+
     if (!cart) {
       throw new NotFoundError('Cart not found');
     }
@@ -33,7 +36,25 @@ const getCart = async (req, res, next) => {
       });
     }
 
-    res.status(StatusCodes.OK).json({ cart });
+    // Add seller details to each order item
+    const orderItemsWithSeller = cart.orderItems.map((item) => {
+      const book = item.book;
+
+      return {
+        ...item.toObject(),
+        sellerName: book?.createdBy
+          ? `${book.createdBy.firstName} ${book.createdBy.lastName}`
+          : 'Unknown Seller',
+        sellerLocation: book?.createdBy?.location || 'Location not provided',
+      };
+    });
+
+    res.status(StatusCodes.OK).json({
+      cart: {
+        ...cart.toObject(),
+        orderItems: orderItemsWithSeller, 
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -78,7 +99,6 @@ const addToCart = async (req, res, next) => {
   }
 };
 
-
 // delete from cart
 const deleteFromCart = async (req, res, next) => {
   try {
@@ -98,11 +118,36 @@ const deleteFromCart = async (req, res, next) => {
     updatedCart.total = calculateCartTotal(updatedCart);
 
     await updatedCart.save();
-    res.status(StatusCodes.OK).json({ msg: 'Item removed successfully', cart });
+
+    const populatedCart = await updatedCart.populate({
+      path: 'orderItems.book',
+      populate: {
+        path: 'createdBy',
+        select: 'firstName lastName location',
+      },
+    });
+
+    res.status(StatusCodes.OK).json({
+      msg: 'Item removed successfully',
+      cart: {
+        ...populatedCart.toObject(),
+        orderItems: populatedCart.orderItems.map((item) => {
+          const book = item.book;
+          return {
+            ...item.toObject(),
+            sellerName: book?.createdBy
+              ? `${book.createdBy.firstName} ${book.createdBy.lastName}`
+              : 'Unknown Seller',
+            sellerLocation: book?.createdBy?.location || 'Location not provided',
+          };
+        }),
+      },
+    });
   } catch (error) {
     next(error);
   }
 };
+
 
 const createPaymentIntent = async (req, res, next) => {
   try {
