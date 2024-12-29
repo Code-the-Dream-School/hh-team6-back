@@ -52,16 +52,18 @@ const getAllUserChats = async (req, res, next) => {
         .status(StatusCodes.NOT_FOUND)
         .json({ msg: 'No chats found for this user' });
     }
-    // const usersChats = chats.map(chat => ({
-    //     chatId: chat._id,
-    //     participants: chat.participants.map(user => ({
-    //       firstName: user.firstName,
-    //       lastName: user.lastName,
-    //     })),
-    //     createdAt: chat.createdAt,
-    //   }));
 
-    res.status(StatusCodes.OK).json(chats);
+    const chatsData = chats.map((chat) => {
+        const otherParticipant = chat.participants.find((participant) => participant._id.toString() !== userId);
+
+        return {
+            chatId: chat._id,
+            chatPeerId: otherParticipant._id,
+            chatPeerName: `${otherParticipant.firstName} ${otherParticipant.lastName}`
+        };
+    });
+
+    res.status(StatusCodes.OK).json(chatsData);
   } catch (error) {
     next(error);
   }
