@@ -87,6 +87,12 @@ const sendMessage = async (req, res, next) => {
       message: message,
     });
 
+    await Chat.findByIdAndUpdate(
+      chatId,
+      { 'lastMessage.timestamp': newMessage.timestamp },
+      { new: true }
+    );
+
     await newMessage.save();
 
     const populatedMessage = await Message.findById(newMessage._id)
@@ -123,18 +129,19 @@ const getChatWithMessages = async (req, res, next) => {
       return next(new NotFoundError('User is not a participant of this chat'));
     }
 
-    const messages = await Message.find({ chat: chatId }).select('-__v')
+    const messages = await Message.find({ chat: chatId })
+      .select('-__v')
       .populate({
         path: 'sender',
         select: '_id',
       })
       .sort({ timestamp: 1 });
-    
+
     const messagesData = messages.map((message) => ({
-        _id: message._id,
-        senderId: message.sender._id,
-        message: message.message,
-        timestamp: message.timestamp
+      _id: message._id,
+      senderId: message.sender._id,
+      message: message.message,
+      timestamp: message.timestamp,
     }));
 
     res.status(StatusCodes.OK).json({ chat, messages: messagesData });
@@ -147,5 +154,5 @@ module.exports = {
   createChat,
   getAllUserChats,
   sendMessage,
-  getChatWithMessages
+  getChatWithMessages,
 };
