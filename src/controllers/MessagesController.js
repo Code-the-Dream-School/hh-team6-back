@@ -76,7 +76,7 @@ const sendMessage = async (req, res, next) => {
     const { userId: senderId } = req.user;
     const { message } = req.body;
     const { chatId } = req.params;
-    
+
     if (!chatId || !message) {
       return next(new BadRequestError('Chat ID and message are required'));
     }
@@ -126,13 +126,19 @@ const getChatWithMessages = async (req, res, next) => {
     const messages = await Message.find({ chat: chatId }).select('-__v')
       .populate({
         path: 'sender',
-        select: 'firstName lastName',
+        select: '_id',
       })
       .sort({ timestamp: 1 });
+    
+    const messagesData = messages.map((message) => ({
+        _id: message._id,
+        senderId: message.sender._id,
+        message: message.message,
+        timestamp: message.timestamp
+    }));
 
-    res.status(StatusCodes.OK).json({ chat, messages });
+    res.status(StatusCodes.OK).json({ chat, messages: messagesData });
   } catch (error) {
-    console.log('Error occurred:', error);
     next(error);
   }
 };
