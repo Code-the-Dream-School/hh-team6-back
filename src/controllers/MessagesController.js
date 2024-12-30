@@ -59,9 +59,9 @@ const getAllUserChats = async (req, res, next) => {
       );
 
       return {
-        chatId: chat._id,
-        chatPeerId: otherParticipant._id,
-        chatPeerName: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
+        id: chat._id,
+        peerId: otherParticipant._id,
+        peerName: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
       };
     });
 
@@ -140,7 +140,7 @@ const getChatWithMessages = async (req, res, next) => {
     const messagesData = messages.map((message) => ({
       _id: message._id,
       senderId: message.sender._id,
-      message: message.message,
+      text: message.message,
       timestamp: message.timestamp,
     }));
 
