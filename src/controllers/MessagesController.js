@@ -49,8 +49,8 @@ const getAllUserChats = async (req, res, next) => {
 
     if (!chats || chats.length === 0) {
       return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ msg: 'No chats found for this user' });
+        .status(StatusCodes.OK)
+        .json(chats);
     }
 
     const chatsData = chats.map((chat) => {
