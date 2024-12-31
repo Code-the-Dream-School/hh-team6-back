@@ -21,6 +21,7 @@ const createChat = async (req, res, next) => {
     if (!chat) {
       chat = new Chat({
         participants: [currentUserId, otherUserId],
+        lastMessage: { timestamp: new Date() }, 
       });
       await chat.save();
     }
