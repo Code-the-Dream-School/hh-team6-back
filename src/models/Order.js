@@ -20,9 +20,19 @@ const OrderSchema = new mongoose.Schema(
     items: [
       {
         book: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Book', 
-          required: true,
+          title: {
+            type: String,
+            required: true,
+          },
+          author: {
+            type: String,
+            required: true,
+          },
+          condition: {
+            type: String,
+            enum: ['New', 'Like New', 'Very Good', 'Good', 'Acceptable'],
+            required: true,
+          },
         },
         price: {
           type: Number,
