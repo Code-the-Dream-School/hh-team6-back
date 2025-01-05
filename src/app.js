@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const favicon = require('express-favicon');
 const logger = require('morgan');
+const http = require('http');
+const socketIO = require('socket.io');
 
 const userRouter = require('./routes/userRouter.js');
 const booksRouter = require('./routes/booksRouter.js');
@@ -19,6 +21,15 @@ const connectDB = require('./db/db.js');
 connectDB();
 
 const app = express();
+
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+app.set('socketio', io);
 
 // middleware
 app.use(cors());
@@ -48,4 +59,28 @@ app.use((req, res, next) => {
 // error handler middleware
 app.use(errorHandlerMiddleware); 
 
-module.exports = app;
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('joinChat', (chatId) => {
+    socket.join(chatId);
+    console.log(`User joined chat: ${chatId}`);
+  });
+
+  socket.on('sendMessage', (data) => {
+    const { chatId, message, senderId } = data;
+
+    io.to(chatId).emit('newMessage', {
+      chatId,
+      senderId,
+      message,
+      timestamp: new Date(),
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
+module.exports = { app, server };
