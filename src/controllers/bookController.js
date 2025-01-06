@@ -104,7 +104,7 @@ const getBook = async (req, res, next) => {
   try {
     const { id: bookId } = req.params;
 
-    const book = await Book.findById(bookId);
+    const book = await Book.findById(bookId).populate('createdBy', 'firstName lastName');;
 
     if (!book) {
       return next(new NotFoundError(`No book with id ${bookId}`));
