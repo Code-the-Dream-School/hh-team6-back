@@ -90,7 +90,8 @@ const getAllBooks = async (req, res, next) => {
     const books = await Book.find(queryObj)
       .sort(sort)
       .limit(validatedLimit) 
-      .skip(validatedSkip);  
+      .skip(validatedSkip)
+      .populate('createdBy', 'firstName lastName');  
 
     res.status(StatusCodes.OK).json({ books, count: books.length });
   } catch (error) {
