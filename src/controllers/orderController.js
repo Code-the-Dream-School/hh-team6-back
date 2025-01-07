@@ -5,31 +5,12 @@ const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const { calculateCartTotal } = require('../utils/cartTotal');
 
-const getAllOrdersAsBuyer = async (req, res, next) => {
+const getOrders = async (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const orders = await Order.find({ buyer: userId });
-
-        if (!orders.length) {
-            throw new NotFoundError('No orders found for this buyer');
-        }
-
-        res.status(StatusCodes.OK).json({ orders });
-    } catch (error) {
-        next(error);
-    }
-};
-
-const getAllOrdersAsSeller = async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const orders = await Order.find({ seller: userId }).populate('buyer', 'firstName lastName email');
-
-        if (!orders.length) {
-            throw new NotFoundError('No orders found for this seller');
-        }
-
-        res.status(StatusCodes.OK).json({ orders });
+        const buyOrders = await Order.find({ buyer: userId });
+        const sellOrders = await Order.find({ seller: userId }).populate('buyer', 'firstName lastName email');
+        res.status(StatusCodes.OK).json({ buyOrders, sellOrders });
     } catch (error) {
         next(error);
     }
@@ -146,8 +127,7 @@ const cancelOrder = async (req, res, next) => {
 };
 
 module.exports = {
-    getAllOrdersAsBuyer,
-    getAllOrdersAsSeller,
+   getOrders,
     createOrderFromCart,
     getOrder,
     updateOrder,

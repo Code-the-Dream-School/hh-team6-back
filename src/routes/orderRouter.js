@@ -1,7 +1,6 @@
 const express = require('express');
 const {
-  getAllOrdersAsBuyer,
-  getAllOrdersAsSeller,
+getOrders,
   createOrderFromCart,
   getOrder,
   updateOrder,
@@ -10,8 +9,7 @@ const auth = require('../middleware/authentication');
 
 const router = express.Router();
 
-router.get('/buyer', auth, getAllOrdersAsBuyer); 
-router.get('/seller', auth, getAllOrdersAsSeller); 
+router.get('/', auth, getOrders); 
 router.post('/', auth, createOrderFromCart); 
 router.get('/:id', auth, getOrder); 
 router.patch('/:id', auth, updateOrder); 
