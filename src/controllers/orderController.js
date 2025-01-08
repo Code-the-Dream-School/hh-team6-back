@@ -8,7 +8,7 @@ const { calculateCartTotal } = require('../utils/cartTotal');
 const getOrders = async (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const buyOrders = await Order.find({ buyer: userId });
+        const buyOrders = await Order.find({ buyer: userId })
         const sellOrders = await Order.find({ seller: userId }).populate('buyer', 'firstName lastName email');
         res.status(StatusCodes.OK).json({ buyOrders, sellOrders });
     } catch (error) {
@@ -91,43 +91,70 @@ const getOrder = async (req, res, next) => {
 
 const updateOrder = async (req, res, next) => {
     try {
-        const { id } = req.params;
-        const { status } = req.body;
-        const allowedStatuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
-
-        if (!allowedStatuses.includes(status)) {
-            throw new BadRequestError('Invalid status');
-        }
-
-        const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
-
-        if (!order) {
-            throw new NotFoundError('Order not found');
-        }
-
-        res.status(StatusCodes.OK).json({ message: 'Order status updated successfully', order });
+      const { id: orderId } = req.params;
+      const userId = req.user.userId;
+      const { status } = req.body;
+  
+      const allowedStatuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+  
+      if (!allowedStatuses.includes(status)) {
+        throw new BadRequestError('Invalid status');
+      }
+  
+      const order = await Order.findById(orderId);
+      if (!order) {
+        throw new NotFoundError('Order not found');
+      }
+  
+      if (order.seller.toString() !== userId) {
+        throw new BadRequestError('You are not authorized to update this order');
+      }
+  
+      order.status = status;
+      await order.save();
+  
+      res.status(StatusCodes.OK).json({
+        message: 'Order status updated successfully',
+        order,
+      });
     } catch (error) {
-        next(error);
+      next(error);
     }
-};
+  };
+  
 
 const cancelOrder = async (req, res, next) => {
     try {
-        const { id: orderId } = req.params;
-        const order = await Order.findByIdAndUpdate(orderId, { status: 'Cancelled' }, { new: true, runValidators: true });
+      const { id: orderId } = req.params;
+      const userId = req.user.userId; 
+  
+      const order = await Order.findById(orderId);
+      if (!order) {
+        throw new NotFoundError('Order not found');
+      }
+  
+      const isAuthorizedUser = [order.buyer.toString(), order.seller.toString()].includes(userId);
 
-        if (!order) {
-            throw new NotFoundError('Order not found');
-        }
-
-        res.status(StatusCodes.OK).json({ msg: 'Order cancelled successfully', order });
+      if (!isAuthorizedUser) {
+        throw new BadRequestError('You are not authorized to cancel this order');
+      }
+  
+      if (order.status !== 'Pending') {
+        throw new BadRequestError('Only orders with a status of "Pending" can be canceled');
+      }
+  
+      order.status = 'Cancelled';
+      await order.save();
+  
+      res.status(StatusCodes.OK).json({ message: 'Order cancelled successfully', order });
     } catch (error) {
-        next(error);
+      next(error);
     }
-};
+  };
+  
 
 module.exports = {
-   getOrders,
+    getOrders,
     createOrderFromCart,
     getOrder,
     updateOrder,
