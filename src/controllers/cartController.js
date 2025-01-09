@@ -12,7 +12,7 @@ const getCart = async (req, res, next) => {
       path: 'orderItems.book',
       populate: {
         path: 'createdBy',
-        select: 'firstName lastName location',
+        select: 'firstName lastName location email',
       },
     });
 
@@ -99,7 +99,7 @@ const addToCart = async (req, res, next) => {
   }
 };
 
-// delete from cart
+
 const deleteFromCart = async (req, res, next) => {
   try {
     const userId = req.user.userId;

@@ -8,7 +8,7 @@ const { calculateCartTotal } = require('../utils/cartTotal');
 const getOrders = async (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const buyOrders = await Order.find({ buyer: userId })
+        const buyOrders = await Order.find({ buyer: userId }).populate('seller', 'firstName lastName email');
         const sellOrders = await Order.find({ seller: userId }).populate('buyer', 'firstName lastName email');
         res.status(StatusCodes.OK).json({ buyOrders, sellOrders });
     } catch (error) {
@@ -68,7 +68,7 @@ const createOrderFromCart = async (req, res, next) => {
 
         res.status(StatusCodes.CREATED).json({ message: 'Orders created successfully', orders });
     } catch (error) {
-        next(error);
+       next(error);
     }
 };
 
@@ -77,7 +77,7 @@ const getOrder = async (req, res, next) => {
         const { id } = req.params;
         const order = await Order.findById(id)
             .populate('buyer', 'firstName lastName email')
-            .populate('seller', 'firstName lastName location');
+            .populate('seller', 'firstName lastName location email');
 
         if (!order) {
             throw new NotFoundError('Order not found');
@@ -92,10 +92,10 @@ const getOrder = async (req, res, next) => {
 const updateOrder = async (req, res, next) => {
     try {
       const { id: orderId } = req.params;
-      const userId = req.user.userId;
       const { status } = req.body;
+      const userId = req.user.userId;
   
-      const allowedStatuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+      const allowedStatuses = ['Confirmed', 'Shipped', 'Delivered', 'Cancelled']; 
   
       if (!allowedStatuses.includes(status)) {
         throw new BadRequestError('Invalid status');
@@ -106,7 +106,9 @@ const updateOrder = async (req, res, next) => {
         throw new NotFoundError('Order not found');
       }
   
-      if (order.seller.toString() !== userId) {
+      const isSeller = order.seller.toString() === userId.toString();
+  
+      if (!isSeller) {
         throw new BadRequestError('You are not authorized to update this order');
       }
   
@@ -114,16 +116,15 @@ const updateOrder = async (req, res, next) => {
       await order.save();
   
       res.status(StatusCodes.OK).json({
-        message: 'Order status updated successfully',
+        message: `Order status updated to '${status}' successfully`,
         order,
       });
     } catch (error) {
+      console.error('Error updating order status:', error.message);
       next(error);
     }
   };
-  
-
-const cancelOrder = async (req, res, next) => {
+  const cancelOrder = async (req, res, next) => {
     try {
       const { id: orderId } = req.params;
       const userId = req.user.userId; 
@@ -152,11 +153,16 @@ const cancelOrder = async (req, res, next) => {
     }
   };
   
+  
+  
+  
+  
+  
 
 module.exports = {
     getOrders,
     createOrderFromCart,
     getOrder,
     updateOrder,
-    cancelOrder,
-};
+  cancelOrder
+ }
