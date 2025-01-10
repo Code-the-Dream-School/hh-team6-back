@@ -9,12 +9,12 @@ const OrderSchema = new mongoose.Schema(
     },
     buyer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+      ref: 'User',
       required: true,
     },
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+      ref: 'User',
       required: true,
     },
     items: [
@@ -40,6 +40,31 @@ const OrderSchema = new mongoose.Schema(
         },
       },
     ],
+
+    shippingAddress: {
+      firstName: { type: String, required: true },
+      lastName: { type: String, required: true },
+      email: {
+        type: String,
+        required: true,
+        validate: {
+          validator: function (v) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+          },
+          message: props => `${props.value} is not a valid email!`
+        }
+      },
+      country: { type: String, required: true },
+      city: { type: String, required: true },
+      address: { type: String }, 
+      zipCode: { type: String, required: true },
+      country: { type: String, required: true },
+    },
+    paymentIntentId: {
+      type: String,
+      required: true, 
+    },
+
     total: {
       type: Number,
       required: true,
@@ -58,7 +83,7 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: function () {
-        return this.total + this.tax + this.shippingFee; 
+        return this.total + this.tax + this.shippingFee;
       },
     },
     status: {
@@ -73,12 +98,10 @@ const OrderSchema = new mongoose.Schema(
     datePlaced: {
       type: Date,
       required: true,
-      default: Date.now, 
+      default: Date.now,
     },
   },
-  {
-    timestamps: true, 
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('Order', OrderSchema);

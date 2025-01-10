@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Book = require('../models/Book');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
@@ -19,8 +20,18 @@ const getOrders = async (req, res, next) => {
 const createOrderFromCart = async (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const cart = await Cart.findOne({ createdBy: userId }).populate('orderItems.book');
+        const { shippingAddress, paymentIntentId } = req.body;
 
+        if (!shippingAddress || !paymentIntentId) {
+            throw new BadRequestError('Shipping address and payment intent are required');
+        }
+
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (paymentIntent.status !== 'succeeded') {
+            throw new BadRequestError('Payment was not successful');
+        }
+
+        const cart = await Cart.findOne({ createdBy: userId }).populate('orderItems.book');
         if (!cart || cart.orderItems.length === 0) {
             throw new BadRequestError('Your cart is empty');
         }
@@ -57,6 +68,8 @@ const createOrderFromCart = async (req, res, next) => {
                 tax: tempCart.tax,
                 shippingFee: tempCart.shippingFee,
                 orderAmount,
+                shippingAddress,
+                paymentIntentId,
             });
 
             orders.push(order);
@@ -68,9 +81,10 @@ const createOrderFromCart = async (req, res, next) => {
 
         res.status(StatusCodes.CREATED).json({ message: 'Orders created successfully', orders });
     } catch (error) {
-       next(error);
+        next(error);
     }
 };
+
 
 const getOrder = async (req, res, next) => {
     try {

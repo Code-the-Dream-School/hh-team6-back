@@ -4,11 +4,12 @@ const { calculateCartTotal } = require('../utils/cartTotal');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
+
 const getCart = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-
-    const cart = await Cart.findOne({ createdBy: userId }).populate({
+    let cart;
+    cart = await Cart.findOne({ createdBy: userId }).populate({
       path: 'orderItems.book',
       populate: {
         path: 'createdBy',
@@ -17,7 +18,7 @@ const getCart = async (req, res, next) => {
     });
 
     if (!cart) {
-      throw new NotFoundError('Cart not found');
+      cart = await Cart.create({ createdBy: userId, orderItems: [] });
     }
 
     const updatedItems = cart.orderItems.filter(
@@ -46,13 +47,14 @@ const getCart = async (req, res, next) => {
           ? `${book.createdBy.firstName} ${book.createdBy.lastName}`
           : 'Unknown Seller',
         sellerLocation: book?.createdBy?.location || 'Location not provided',
+        sellerId: book?.createdBy?._id,
       };
     });
 
     res.status(StatusCodes.OK).json({
       cart: {
         ...cart.toObject(),
-        orderItems: orderItemsWithSeller, 
+        orderItems: orderItemsWithSeller,
       },
     });
   } catch (error) {
@@ -148,27 +150,28 @@ const deleteFromCart = async (req, res, next) => {
   }
 };
 
-
 const createPaymentIntent = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const cart = await Cart.findOne({ createdBy: userId }).populate(
-      'orderItems.book'
-    );
+    const cart = await getUserCart(userId);
 
-    if (!cart || cart.orderItems.length === 0) {
+    if (cart.orderItems.length === 0) {
       throw new BadRequestError('Your cart is empty');
     }
+
     if (cart.status === 'paid') {
-      return res
-        .status(StatusCodes.OK)
-        .json({ msg: 'Payment already processed', cart });
+      return res.status(StatusCodes.OK).json({ msg: 'Payment already processed', cart });
     }
 
     if (cart.clientSecret) {
-      return res
-        .status(StatusCodes.OK)
-        .json({ clientSecret: cart.clientSecret });
+      const paymentIntent = await stripe.paymentIntents.retrieve(cart.paymentIntentId);
+      if (paymentIntent.status === 'requires_payment_method') {
+        cart.clientSecret = null;
+        cart.paymentIntentId = null;
+        await cart.save();
+      } else {
+        return res.status(StatusCodes.OK).json({ clientSecret: cart.clientSecret });
+      }
     }
 
     const totalAmount = Math.round(cart.total * 100);
@@ -181,15 +184,13 @@ const createPaymentIntent = async (req, res, next) => {
     cart.paymentIntentId = paymentIntent.id;
     await cart.save();
 
-    res
-      .status(StatusCodes.OK)
-      .json({ clientSecret: paymentIntent.client_secret });
+    res.status(StatusCodes.OK).json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     next(error);
   }
 };
 
-// Confirm payment
+
 const confirmPayment = async (req, res, next) => {
   try {
     const { paymentIntentId } = req.body;
