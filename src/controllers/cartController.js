@@ -153,7 +153,9 @@ const deleteFromCart = async (req, res, next) => {
 const createPaymentIntent = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const cart = await getUserCart(userId);
+    const cart = await Cart.findOne({ createdBy: userId }).populate(
+      'orderItems.book'
+    );
 
     if (cart.orderItems.length === 0) {
       throw new BadRequestError('Your cart is empty');
@@ -214,6 +216,15 @@ const confirmPayment = async (req, res, next) => {
     next(error);
   }
 };
+const clearCart = async (userId) => {
+  const cart = await Cart.findOne({ createdBy: userId });
+  if (cart) {
+    cart.orderItems = [];
+    cart.total = 0;
+    cart.status = 'empty';
+    await cart.save();
+  }
+};
 
 module.exports = {
   getCart,
@@ -221,4 +232,5 @@ module.exports = {
   deleteFromCart,
   createPaymentIntent,
   confirmPayment,
+  clearCart
 };
