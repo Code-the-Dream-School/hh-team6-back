@@ -9,36 +9,13 @@ This repository hosts the Back-End codebase responsible for handling API request
 ## Back-End Repository Deployment  
 The back-end of the project is deployed here: [Deployment Link](https://re-books-back.onrender.com)
 
-## Key Features
+## Table of Contents
 
-### User Registration and Account Management
-
-- **Sign Up**: Users can register an account to buy and sell books.
-- **Account Management**: Users can provide detailed profile information and manage their listed and purchased books.
-- **Dashboard**: Displays sections for managing books in user's account.
-- **Password Management**: Allows users to reset or update their password.
-
-### Search, Filtering, and Sorting
-
-- **Search Functionality**: Search for books by title, author, or ISBN.
-- **Filter Options**: Narrow results by age category, genre, format, and condition.
-- **Sorting and Pagination**: Organize search results for easier browsing.
-
-### Book Viewing and Purchasing
-
-- **List View**: View all books that are available in stock.
-- **Detailed Views**: View book details, including cover, author, genre, price, and condition.
-- **Purchase Books**: Users can purchase books after logging in.
-
-### Communication System
-
-- **Messaging**: Real-time messaging for user-to-user communication regarding books with Socket.io.
-- **Notifications (Stretch Goal)**: Alerts for messages and book-related updates. 
-
-### Stretch Goal: Online Payment for Books
-- **Payment Integration**: Securely process payments with Stripe or PayPal.
-- **Payment Records**: Store payment history and provide transaction details in user profiles. 
-
+1. [Technologies Used](#technologies-used)
+2. [Key Features](#key-features)
+3. [Quick Start](#quick-start)
+4. [API Documentation](#api-documentation)
+5. [Authors](#authors)
 
 ## Technologies Used
 
@@ -88,6 +65,37 @@ Our back-end is powered by a robust set of tools and libraries, ensuring a scala
   - `Nodemon` - Automatically restarts the server during development when file changes are detected.
   - `ESLint` - A tool for identifying and fixing JavaScript code issues.
   - `Prettier` - A code formatter to enforce consistent code styling.
+
+## Key Features
+
+### User Registration and Account Management
+
+- **Sign Up**: Users can register an account to buy and sell books.
+- **Account Management**: Users can provide detailed profile information and manage their listed and purchased books.
+- **Dashboard**: Displays sections for managing books in user's account.
+- **Password Management**: Allows users to reset or update their password.
+
+### Search, Filtering, and Sorting
+
+- **Search Functionality**: Search for books by title, author, or ISBN.
+- **Filter Options**: Narrow results by age category, genre, format, and condition.
+- **Sorting and Pagination**: Organize search results for easier browsing.
+
+### Book Viewing and Purchasing
+
+- **List View**: View all books that are available in stock.
+- **Detailed Views**: View book details, including cover, author, genre, price, and condition.
+- **Purchase Books**: Users can purchase books after logging in.
+
+### Communication System
+
+- **Messaging**: Real-time messaging for user-to-user communication regarding books with Socket.io.
+- **Notifications (Stretch Goal)**: Alerts for messages and book-related updates. 
+
+### Stretch Goal: Online Payment for Books
+- **Payment Integration**: Securely process payments with Stripe or PayPal.
+- **Payment Records**: Store payment history and provide transaction details in user profiles. 
+
 
 ## Quick Start
 
@@ -177,6 +185,8 @@ To properly run this application, you need to set up environment variables. This
 ## API Documentation
 This project includes comprehensive API documentation generated with [Swagger](https://swagger.io/). You can explore and test the API endpoints using the Swagger UI available at: `http://localhost:8000/api-docs`. Ensure that you have the server running before accessing the documentation.
 
+
 ## Authors
--[Valentina Rudnitskaya](https://github.com/vrudnitskaya)
--[Tetiana Andriyanova](https://github.com/Tanyaa-a)
+
+- [Tetiana Andriyanova](https://github.com/Tanyaa-a)
+- [Valentina Rudnitskaya](https://github.com/vrudnitskaya)
