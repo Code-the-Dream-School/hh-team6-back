@@ -100,6 +100,14 @@ const sendMessage = async (req, res, next) => {
       .select('-__v')
       .populate('sender', 'firstName lastName');
 
+    const socketMessage = {
+      _id: populatedMessage._id,
+      senderId: populatedMessage.sender._id,
+      text: populatedMessage.message,
+      timestamp: populatedMessage.timestamp,
+    };
+
+    req.app.get('socketio').to(chatId).emit('newMessage', socketMessage);
     res.status(StatusCodes.CREATED).json(populatedMessage);
   } catch (error) {
     next(error);
