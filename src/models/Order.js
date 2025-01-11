@@ -41,28 +41,28 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
 
-    shippingAddress: {
-      firstName: { type: String, required: true },
-      lastName: { type: String, required: true },
-      email: {
-        type: String,
-        required: true,
-        validate: {
-          validator: function (v) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-          },
-          message: props => `${props.value} is not a valid email!`
-        }
-      },
-      country: { type: String, required: true },
-      city: { type: String, required: true },
-      address: { type: String }, 
-      zipCode: { type: String, required: true },
-    },
-    paymentIntentId: {
-      type: String,
-      required: true, 
-    },
+    // shippingAddress: {
+    //   firstName: { type: String, required: true },
+    //   lastName: { type: String, required: true },
+    //   email: {
+    //     type: String,
+    //     required: true,
+    //     validate: {
+    //       validator: function (v) {
+    //         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    //       },
+    //       message: props => `${props.value} is not a valid email!`
+    //     }
+    //   },
+    //   country: { type: String, required: true },
+    //   city: { type: String, required: true },
+    //   address: { type: String }, 
+    //   zipCode: { type: String, required: true },
+    // },
+    // paymentIntentId: {
+    //   type: String,
+    //   required: true, 
+    // },
 
     total: {
       type: Number,
