@@ -27,12 +27,13 @@ const addBookToSavedBooks = async (req, res, next) => {
     }
 
     const bookExists = savedBooks.books.some(
-      (book) => book.isbn10 === isbn10 || book.isbn13 === isbn13
+      (book) => 
+        (isbn10 && book.isbn10 === isbn10) || (isbn13 && book.isbn13 === isbn13)
     );
 
     if (bookExists) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
+        .status(StatusCodes.OK)
         .json({ msg: 'This book is already saved.' });
     }
 
@@ -73,8 +74,20 @@ const getSavedBooks = async (req, res, next) => {
     const booksWithDetails = [];
 
     for (const savedBook of savedBooks.books) {
+      const searchConditions = [];
+      if (savedBook.isbn13) {
+        searchConditions.push({ isbn13: savedBook.isbn13 });
+      }
+      if (savedBook.isbn10) {
+        searchConditions.push({ isbn10: savedBook.isbn10 });
+      }
+
+      if (searchConditions.length === 0) {
+        continue;
+      }
+
       const bookDetails = await Book.find({
-        $or: [{ isbn13: savedBook.isbn13 }, { isbn10: savedBook.isbn10 }],
+        $or: searchConditions,
       });
 
       if (bookDetails.length > 0) {
@@ -98,7 +111,7 @@ const getSavedBooks = async (req, res, next) => {
             bookData.listings.push({
               sellerId: book.createdBy,
               sellerName: user ? `${user.firstName} ${user.lastName}` : null,
-              sellerLocation: user.location || 'Location not provided', 
+              sellerLocation: user.location || 'Location not provided',
               bookIdOriginal: book._id,
               price: book.price,
               isAvailable: book.isAvailable,
