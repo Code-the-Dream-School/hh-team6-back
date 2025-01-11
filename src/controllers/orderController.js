@@ -22,10 +22,6 @@ const createOrderFromCart = async (req, res, next) => {
         const userId = req.user.userId;
         const { shippingAddress, paymentIntentId } = req.body;
 
-        if (!shippingAddress || !paymentIntentId) {
-            throw new BadRequestError('Shipping address and payment intent are required');
-        }
-
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
         if (paymentIntent.status !== 'succeeded') {
             throw new BadRequestError('Payment was not successful');
