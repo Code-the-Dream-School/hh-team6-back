@@ -1,6 +1,6 @@
 # Re:Books Back-End Repository
 
-Welcome to the front-end repository for **Re:Books** — an innovative platform connecting individuals who wish to sell books from their personal libraries with those eager to purchase them. This application fosters a community-driven marketplace where users can list books for sale, browse available collections, and communicate seamlessly with each other.
+Welcome to the back-end repository for **Re:Books** — an innovative platform connecting individuals who wish to sell books from their personal libraries with those eager to purchase them. This application fosters a community-driven marketplace where users can list books for sale, browse available collections, and communicate seamlessly with each other.
 
 [Visit Website](https://rebooksctd.netlify.app/)
 
@@ -178,5 +178,5 @@ To properly run this application, you need to set up environment variables. This
 This project includes comprehensive API documentation generated with [Swagger](https://swagger.io/). You can explore and test the API endpoints using the Swagger UI available at: `http://localhost:8000/api-docs`. Ensure that you have the server running before accessing the documentation.
 
 ## Authors
-[Valentina Rudnitskaya](https://github.com/vrudnitskaya)
-[Tetiana Andriyanova](https://github.com/Tanyaa-a)
+-[Valentina Rudnitskaya](https://github.com/vrudnitskaya)
+-[Tetiana Andriyanova](https://github.com/Tanyaa-a)
