@@ -20,6 +20,11 @@ const OrderSchema = new mongoose.Schema(
     items: [
       {
         book: {
+          bookId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Book', 
+            required: true,
+          },
           title: {
             type: String,
             required: true,
@@ -32,6 +37,10 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             enum: ['New', 'Like New', 'Very Good', 'Good', 'Acceptable'],
             required: true,
+          },
+          isAvailable: {
+            type: Boolean,
+            default: false,
           },
         },
         price: {

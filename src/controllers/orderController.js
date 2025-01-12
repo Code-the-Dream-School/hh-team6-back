@@ -30,6 +30,7 @@ const createOrderFromCart = async (req, res, next) => {
     const cart = await Cart.findOne({ createdBy: userId }).populate(
       'orderItems.book'
     );
+
     if (!cart || cart.orderItems.length === 0) {
       throw new BadRequestError('Your cart is empty');
     }
@@ -43,14 +44,21 @@ const createOrderFromCart = async (req, res, next) => {
 
     const orders = [];
     for (const [sellerId, items] of Object.entries(itemsBySeller)) {
-      const orderItems = items.map((item) => ({
-        book: {
-          title: item.book.title,
-          author: item.book.author,
-          condition: item.book.condition,
-        },
-        price: item.price,
-      }));
+      const orderItems = items.map((item) => {
+        const isAvailable = false;
+
+        return {
+          book: {
+            bookId: item.book._id,
+            title: item.book.title,
+            author: item.book.author,
+            condition: item.book.condition,
+            isAvailable, 
+          },
+          price: item.price,
+        };
+      });
+
       const tempCart = { orderItems };
       const buyerLocation = req.user.location;
       const sellerLocation = items[0].book.createdBy.location;
@@ -60,8 +68,9 @@ const createOrderFromCart = async (req, res, next) => {
         sellerLocation
       );
 
+      // Create the order
       const order = await Order.create({
-        orderNumber: uuidv4(), 
+        orderNumber: uuidv4(),
         buyer: userId,
         seller: sellerId,
         items: orderItems,
@@ -71,8 +80,18 @@ const createOrderFromCart = async (req, res, next) => {
         orderAmount,
       });
       orders.push(order);
+
+      // Update isAvailable in the Book model
+      for (const item of items) {
+        const book = await Book.findById(item.book._id);
+        if (book) {
+          book.isAvailable = false; 
+          await book.save(); 
+        }
+      }
     }
 
+    // Clear the cart
     cart.orderItems = [];
     cart.total = 0;
     await cart.save();
@@ -84,6 +103,8 @@ const createOrderFromCart = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 const getOrder = async (req, res, next) => {
   try {
@@ -100,8 +121,6 @@ const getOrder = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 const updateOrder = async (req, res, next) => {
   try {
@@ -143,7 +162,6 @@ const updateOrder = async (req, res, next) => {
           }
         }
 
-        // Send email to both buyer and seller
         await sendEmail(
           order.seller.email,
           `Order ${order.orderNumber} Cancelled by Buyer`,
@@ -169,7 +187,6 @@ const updateOrder = async (req, res, next) => {
         );
       }
 
-      // Notify both buyer and seller about the status change
       await sendEmail(
         order.buyer.email,
         `Order ${order.orderNumber} Status Updated`,
@@ -196,7 +213,6 @@ const updateOrder = async (req, res, next) => {
     next(error);
   }
 };
-
 
 module.exports = {
   getOrders,
