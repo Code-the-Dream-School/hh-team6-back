@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Book = require('../models/Book');
+const sendEmail = require('../utils/sendEmail');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const { calculateCartTotal } = require('../utils/cartTotal');
@@ -60,7 +61,7 @@ const createOrderFromCart = async (req, res, next) => {
       );
 
       const order = await Order.create({
-        orderNumber: uuidv4(), // Use UUID for unique order numbers
+        orderNumber: uuidv4(), 
         buyer: userId,
         seller: sellerId,
         items: orderItems,
@@ -100,6 +101,8 @@ const getOrder = async (req, res, next) => {
   }
 };
 
+
+
 const updateOrder = async (req, res, next) => {
   try {
     const { id: orderId } = req.params;
@@ -118,22 +121,42 @@ const updateOrder = async (req, res, next) => {
       throw new BadRequestError('Invalid status');
     }
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate('buyer seller', 'email firstName lastName');
     if (!order) {
       throw new NotFoundError('Order not found');
     }
 
-    const isSeller = order.seller.toString() === userId;
-    const isBuyer = order.buyer.toString() === userId;
+    const isSeller = order.seller._id.toString() === userId;
+    const isBuyer = order.buyer._id.toString() === userId;
 
     // Validate status transitions based on roles and current status
     if (isBuyer) {
       if (order.status === 'Pending' && status === 'Cancelled') {
         order.status = status;
-      } else {
-        throw new BadRequestError(
-          'Buyers can only cancel orders in Pending status'
+
+        // Adjust inventory or perform cleanup
+        for (const item of order.items) {
+          const book = await Book.findById(item.book._id);
+          if (book) {
+            book.stock += item.quantity;
+            await book.save();
+          }
+        }
+
+        // Send email to both buyer and seller
+        await sendEmail(
+          order.seller.email,
+          `Order ${order.orderNumber} Cancelled by Buyer`,
+          `<p>The buyer has cancelled the order <b>${order.orderNumber}</b>.</p>`
         );
+
+        await sendEmail(
+          order.buyer.email,
+          `Order ${order.orderNumber} Cancelled`,
+          `<p>You have successfully cancelled the order <b>${order.orderNumber}</b>.</p>`
+        );
+      } else {
+        throw new BadRequestError('Buyers can only cancel orders in Pending status');
       }
     } else if (isSeller) {
       if (order.status === 'Pending' && ['Confirmed', 'Cancelled'].includes(status)) {
@@ -145,6 +168,19 @@ const updateOrder = async (req, res, next) => {
           'Sellers can only update status from Pending to Confirmed, Pending/Confirmed to Cancelled, or Confirmed to Shipped'
         );
       }
+
+      // Notify both buyer and seller about the status change
+      await sendEmail(
+        order.buyer.email,
+        `Order ${order.orderNumber} Status Updated`,
+        `<p>The status of your order <b>${order.orderNumber}</b> has been updated to <b>${status}</b>.</p>`
+      );
+
+      await sendEmail(
+        order.seller.email,
+        `Order ${order.orderNumber} Status Updated`,
+        `<p>The status of the order <b>${order.orderNumber}</b> has been updated to <b>${status}</b>.</p>`
+      );
     } else {
       throw new BadRequestError('You are not authorized to update this order');
     }
@@ -160,6 +196,7 @@ const updateOrder = async (req, res, next) => {
     next(error);
   }
 };
+
 
 module.exports = {
   getOrders,
