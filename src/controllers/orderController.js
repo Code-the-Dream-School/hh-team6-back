@@ -81,15 +81,13 @@ const createOrderFromCart = async (req, res, next) => {
       });
       orders.push(order);
 
-      // Update isAvailable in the Book model
-      for (const item of items) {
-        const book = await Book.findById(item.book._id);
-        if (book) {
-          book.isAvailable = false; 
-          await book.save(); 
-        }
-      }
-    }
+    const bookIds = items.map((item) => item.book._id);
+
+    await Book.updateMany(
+      { _id: { $in: bookIds } }, 
+      { $set: { isAvailable: false } }
+    );
+  }
 
     // Clear the cart
     cart.orderItems = [];
