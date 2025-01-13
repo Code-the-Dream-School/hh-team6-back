@@ -9,17 +9,22 @@ const OrderSchema = new mongoose.Schema(
     },
     buyer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+      ref: 'User',
       required: true,
     },
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+      ref: 'User',
       required: true,
     },
     items: [
       {
         book: {
+          bookId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Book', 
+            required: true,
+          },
           title: {
             type: String,
             required: true,
@@ -33,6 +38,10 @@ const OrderSchema = new mongoose.Schema(
             enum: ['New', 'Like New', 'Very Good', 'Good', 'Acceptable'],
             required: true,
           },
+          isAvailable: {
+            type: Boolean,
+            default: false,
+          },
         },
         price: {
           type: Number,
@@ -40,6 +49,7 @@ const OrderSchema = new mongoose.Schema(
         },
       },
     ],
+
     total: {
       type: Number,
       required: true,
@@ -58,7 +68,7 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: function () {
-        return this.total + this.tax + this.shippingFee; 
+        return this.total + this.tax + this.shippingFee;
       },
     },
     status: {
@@ -73,12 +83,10 @@ const OrderSchema = new mongoose.Schema(
     datePlaced: {
       type: Date,
       required: true,
-      default: Date.now, 
+      default: Date.now,
     },
   },
-  {
-    timestamps: true, 
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('Order', OrderSchema);
