@@ -10,19 +10,21 @@ const { calculateCartTotal } = require('../utils/cartTotal');
 const getOrders = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const buyOrders = await Order.find({ buyer: userId }).populate(
-      'seller',
-      'firstName lastName email'
-    );
-    const sellOrders = await Order.find({ seller: userId }).populate(
-      'buyer',
-      'firstName lastName email'
-    );
+
+    const buyOrders = await Order.find({ buyer: userId })
+      .populate('seller', 'firstName lastName email')
+      .sort({ orderDate: -1 }); 
+
+    const sellOrders = await Order.find({ seller: userId })
+      .populate('buyer', 'firstName lastName email')
+      .sort({ orderDate: -1 }); 
+
     res.status(StatusCodes.OK).json({ buyOrders, sellOrders });
   } catch (error) {
     next(error);
   }
 };
+
 
 const createOrderFromCart = async (req, res, next) => {
   try {
