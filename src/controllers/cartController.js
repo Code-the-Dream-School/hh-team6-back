@@ -16,9 +16,6 @@ const getCart = async (req, res, next) => {
        },
      });
 
-    if (!cart) {
-      throw new NotFoundError('Cart not found');
-    }
     const updatedItems = cart.orderItems.filter(
       (item) => item.book && item.book.isAvailable
     );
