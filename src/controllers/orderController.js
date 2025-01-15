@@ -70,7 +70,6 @@ const createOrderFromCart = async (req, res, next) => {
         sellerLocation
       );
 
-      // Create the order
       const order = await Order.create({
         orderNumber: uuidv4(),
         buyer: userId,
@@ -148,19 +147,15 @@ const updateOrder = async (req, res, next) => {
     const isSeller = order.seller._id.toString() === userId;
     const isBuyer = order.buyer._id.toString() === userId;
 
-    // Validate status transitions based on roles and current status
     if (isBuyer) {
       if (order.status === 'Pending' && status === 'Cancelled') {
         order.status = status;
 
-        // Adjust inventory or perform cleanup
-        for (const item of order.items) {
-          const book = await Book.findById(item.book._id);
-          if (book) {
-            book.stock += item.quantity;
-            await book.save();
-          }
-        }
+        const bookIds = order.items.map((item) => item.book.bookId);
+        await Book.updateMany(
+          { _id: { $in: bookIds } },
+          { $set: { isAvailable: true } }  
+        );
 
         await sendEmail(
           order.seller.email,
@@ -187,6 +182,15 @@ const updateOrder = async (req, res, next) => {
         );
       }
 
+      // If the seller cancels the order, update book availability to true
+      if (status === 'Cancelled') {
+        const bookIds = order.items.map((item) => item.book.bookId);
+        await Book.updateMany(
+          { _id: { $in: bookIds } },
+          { $set: { isAvailable: true } }  
+        );
+      }
+
       await sendEmail(
         order.buyer.email,
         `Order ${order.orderNumber} Status Updated`,
@@ -202,7 +206,7 @@ const updateOrder = async (req, res, next) => {
       throw new BadRequestError('You are not authorized to update this order');
     }
 
-    await order.save();
+    await order.save();  
 
     res.status(StatusCodes.OK).json({
       message: `Order status updated to '${status}' successfully`,
@@ -213,6 +217,10 @@ const updateOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+
+  
+
 
 module.exports = {
   getOrders,

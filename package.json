@@ -30,6 +30,7 @@
     "stripe": "^17.4.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.0.5",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
