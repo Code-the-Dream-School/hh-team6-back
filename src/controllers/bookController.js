@@ -90,7 +90,8 @@ const getAllBooks = async (req, res, next) => {
     const books = await Book.find(queryObj)
       .sort(sort)
       .limit(validatedLimit) 
-      .skip(validatedSkip);  
+      .skip(validatedSkip)
+      .populate('createdBy', 'firstName lastName');  
 
     res.status(StatusCodes.OK).json({ books, count: books.length });
   } catch (error) {
@@ -103,7 +104,7 @@ const getBook = async (req, res, next) => {
   try {
     const { id: bookId } = req.params;
 
-    const book = await Book.findById(bookId);
+    const book = await Book.findById(bookId).populate('createdBy', 'firstName lastName');;
 
     if (!book) {
       return next(new NotFoundError(`No book with id ${bookId}`));
