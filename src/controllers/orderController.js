@@ -13,18 +13,17 @@ const getOrders = async (req, res, next) => {
 
     const buyOrders = await Order.find({ buyer: userId })
       .populate('seller', 'firstName lastName email')
-      .sort({ orderDate: -1 }); 
+      .sort({ orderDate: -1 });
 
     const sellOrders = await Order.find({ seller: userId })
       .populate('buyer', 'firstName lastName email')
-      .sort({ orderDate: -1 }); 
+      .sort({ orderDate: -1 });
 
     res.status(StatusCodes.OK).json({ buyOrders, sellOrders });
   } catch (error) {
     next(error);
   }
 };
-
 
 const createOrderFromCart = async (req, res, next) => {
   try {
@@ -55,7 +54,7 @@ const createOrderFromCart = async (req, res, next) => {
             title: item.book.title,
             author: item.book.author,
             condition: item.book.condition,
-            isAvailable, 
+            isAvailable,
           },
           price: item.price,
         };
@@ -82,13 +81,13 @@ const createOrderFromCart = async (req, res, next) => {
       });
       orders.push(order);
 
-    const bookIds = items.map((item) => item.book._id);
+      const bookIds = items.map((item) => item.book._id);
 
-    await Book.updateMany(
-      { _id: { $in: bookIds } }, 
-      { $set: { isAvailable: false } }
-    );
-  }
+      await Book.updateMany(
+        { _id: { $in: bookIds } },
+        { $set: { isAvailable: false } }
+      );
+    }
 
     // Clear the cart
     cart.orderItems = [];
@@ -102,8 +101,6 @@ const createOrderFromCart = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 const getOrder = async (req, res, next) => {
   try {
@@ -139,7 +136,10 @@ const updateOrder = async (req, res, next) => {
       throw new BadRequestError('Invalid status');
     }
 
-    const order = await Order.findById(orderId).populate('buyer seller', 'email firstName lastName');
+    const order = await Order.findById(orderId).populate(
+      'buyer seller',
+      'email firstName lastName'
+    );
     if (!order) {
       throw new NotFoundError('Order not found');
     }
@@ -154,7 +154,7 @@ const updateOrder = async (req, res, next) => {
         const bookIds = order.items.map((item) => item.book.bookId);
         await Book.updateMany(
           { _id: { $in: bookIds } },
-          { $set: { isAvailable: true } }  
+          { $set: { isAvailable: true } }
         );
 
         await sendEmail(
@@ -169,12 +169,22 @@ const updateOrder = async (req, res, next) => {
           `<p>You have successfully cancelled the order <b>${order.orderNumber}</b>.</p>`
         );
       } else {
-        throw new BadRequestError('Buyers can only cancel orders in Pending status');
+        throw new BadRequestError(
+          'Buyers can only cancel orders in Pending status'
+        );
       }
     } else if (isSeller) {
-      if (order.status === 'Pending' && ['Confirmed', 'Cancelled'].includes(status)) {
+      if (
+        order.status === 'Pending' &&
+        ['Confirmed', 'Cancelled'].includes(status)
+      ) {
         order.status = status;
-      } else if (order.status === 'Confirmed' && ['Shipped', 'Cancelled'].includes(status)) {
+      } else if (
+        order.status === 'Confirmed' &&
+        ['Shipped', 'Cancelled'].includes(status)
+      ) {
+        order.status = status;
+      } else if (order.status === 'Shipped' && status === 'Delivered') {
         order.status = status;
       } else {
         throw new BadRequestError(
@@ -187,7 +197,7 @@ const updateOrder = async (req, res, next) => {
         const bookIds = order.items.map((item) => item.book.bookId);
         await Book.updateMany(
           { _id: { $in: bookIds } },
-          { $set: { isAvailable: true } }  
+          { $set: { isAvailable: true } }
         );
       }
 
@@ -206,7 +216,7 @@ const updateOrder = async (req, res, next) => {
       throw new BadRequestError('You are not authorized to update this order');
     }
 
-    await order.save();  
+    await order.save();
 
     res.status(StatusCodes.OK).json({
       message: `Order status updated to '${status}' successfully`,
@@ -217,10 +227,6 @@ const updateOrder = async (req, res, next) => {
     next(error);
   }
 };
-
-
-  
-
 
 module.exports = {
   getOrders,
