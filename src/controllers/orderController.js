@@ -168,6 +168,8 @@ const updateOrder = async (req, res, next) => {
           `Order ${order.orderNumber} Cancelled`,
           `<p>You have successfully cancelled the order <b>${order.orderNumber}</b>.</p>`
         );
+      } else if (order.status === 'Shipped' && status === 'Delivered') {
+        order.status = status;
       } else {
         throw new BadRequestError(
           'Buyers can only cancel orders in Pending status'
@@ -183,8 +185,6 @@ const updateOrder = async (req, res, next) => {
         order.status === 'Confirmed' &&
         ['Shipped', 'Cancelled'].includes(status)
       ) {
-        order.status = status;
-      } else if (order.status === 'Shipped' && status === 'Delivered') {
         order.status = status;
       } else {
         throw new BadRequestError(
