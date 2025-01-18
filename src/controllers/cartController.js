@@ -127,36 +127,46 @@ const addToCart = async (req, res, next) => {
     next(error);
   }
 };
+// 
+
+
 const createPaymentIntent = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const cart = await Cart.findOne({ createdBy: userId }).populate(
       'orderItems.book'
     );
-    if (!cart || cart.orderItems.length === 0) {
+
+    if (cart.orderItems.length === 0) {
       throw new BadRequestError('Your cart is empty');
     }
+
     if (cart.status === 'paid') {
-      return res
-        .status(StatusCodes.OK)
-        .json({ msg: 'Payment already processed', cart });
+      return res.status(StatusCodes.OK).json({ msg: 'Payment already processed', cart });
     }
+
     if (cart.clientSecret) {
-      return res
-        .status(StatusCodes.OK)
-        .json({ clientSecret: cart.clientSecret });
+      const paymentIntent = await stripe.paymentIntents.retrieve(cart.paymentIntentId);
+      if (paymentIntent.status === 'requires_payment_method') {
+        cart.clientSecret = null;
+        cart.paymentIntentId = null;
+        await cart.save();
+      } else {
+        return res.status(StatusCodes.OK).json({ clientSecret: cart.clientSecret });
+      }
     }
+
     const totalAmount = Math.round(cart.total * 100);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmount,
       currency: 'usd',
     });
+
     cart.clientSecret = paymentIntent.client_secret;
     cart.paymentIntentId = paymentIntent.id;
     await cart.save();
-    res
-      .status(StatusCodes.OK)
-      .json({ clientSecret: paymentIntent.client_secret });
+
+    res.status(StatusCodes.OK).json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     next(error);
   }
