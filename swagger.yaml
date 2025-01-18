@@ -646,6 +646,177 @@ paths:
           description: Cart not found
         '500':
           description: Internal server error
+  
+  /chats:
+    post:
+      summary: Create or retrieve a chat between two users
+      tags:
+        - Chats
+      requestBody:
+        description: User ids of the chat participants
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: 64a6b2c5e16e5c0b9cd02abc
+                  description: The user id of the other participant
+      responses:
+        '200':
+          description: Chat retrieved or created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: Chat created successfully
+                  chat:
+                    type: object
+                    description: Details of the chat
+        '400':
+          description: User id of the other participant must be provided
+        '500':
+          description: Internal server error
+    get:
+      summary: Get all chats for the authenticated user
+      tags:
+        - Chats
+      responses:
+        '200':
+          description: List of chats retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: 64a6b2c5e16e5c0b9cd02abc
+                      description: Chat Id
+                    peerId:
+                      type: string
+                      example: 64a6b2c5e16e5c0b9cd02abd
+                      description: Id of the other participant
+                    peerName:
+                      type: string
+                      example: John Doe
+                      description: Name of the other participant
+        '400':
+          description: User ID is required
+        '404':
+          description: No chats found
+        '500':
+          description: Internal server error
+  /chats/{chatId}/messages:
+    post:
+      summary: Send a message in a chat
+      tags:
+        - Chats
+      parameters:
+        - in: path
+          name: chatId
+          required: true
+          schema:
+            type: string
+            example: 64a6b2c5e16e5c0b9cd02abc
+            description: ID of the chat
+      requestBody:
+        description: Message content to send
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Hello, how are you?"
+                  description: Message text to send
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                    example: 64a6b2c5e16e5c0b9cd02abd
+                    description: Message ID
+                  senderId:
+                    type: string
+                    example: 64a6b2c5e16e5c0b9cd02abc
+                    description: ID of the sender
+                  text:
+                    type: string
+                    example: "Hello, how are you?"
+                    description: The message text
+                  timestamp:
+                    type: string
+                    example: "2023-07-20T15:45:00Z"
+                    description: Timestamp of the message
+        '400':
+          description: Chat ID and message are required
+        '500':
+          description: Internal server error
+    get:
+      summary: Get details of a chat and its messages
+      tags:
+        - Chats
+      parameters:
+        - in: path
+          name: chatId
+          required: true
+          schema:
+            type: string
+            example: 64a6b2c5e16e5c0b9cd02abc
+            description: ID of the chat
+      responses:
+        '200':
+          description: Chat details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chat:
+                    type: object
+                    description: Chat details
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 64a6b2c5e16e5c0b9cd02abd
+                          description: Message ID
+                        senderId:
+                          type: string
+                          example: 64a6b2c5e16e5c0b9cd02abc
+                          description: ID of the sender
+                        text:
+                          type: string
+                          example: "Hello, how are you?"
+                          description: The message text
+                        timestamp:
+                          type: string
+                          example: "2023-07-20T15:45:00Z"
+                          description: Timestamp of the message
+        '400':
+          description: Chat ID is required
+        '404':
+          description: Chat not found or user is not a participant
+        '500':
+          description: Internal server error
 
 components:
   schemas:
@@ -764,3 +935,5 @@ tags:
     description: Endpoints related to managing saved books
   - name: Cart
     description: Endpoints related to managing user's cart
+  - name: Chats
+    description: Endpoints related to managing messages between users
