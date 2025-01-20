@@ -2,6 +2,7 @@ const { StatusCodes } = require('http-status-codes');
 const { BadRequestError, NotFoundError } = require('../errors');
 const SavedBooks = require('../models/SavedBooks');
 const Book = require('../models/Book');
+const User = require('../models/User');
 
 const addBookToSavedBooks = async (req, res, next) => {
   try {
@@ -26,12 +27,13 @@ const addBookToSavedBooks = async (req, res, next) => {
     }
 
     const bookExists = savedBooks.books.some(
-      (book) => book.isbn10 === isbn10 || book.isbn13 === isbn13
+      (book) => 
+        (isbn10 && book.isbn10 === isbn10) || (isbn13 && book.isbn13 === isbn13)
     );
 
     if (bookExists) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
+        .status(StatusCodes.OK)
         .json({ msg: 'This book is already saved.' });
     }
 
@@ -72,10 +74,22 @@ const getSavedBooks = async (req, res, next) => {
     const booksWithDetails = [];
 
     for (const savedBook of savedBooks.books) {
+      const searchConditions = [];
+      if (savedBook.isbn13) {
+        searchConditions.push({ isbn13: savedBook.isbn13 });
+      }
+      if (savedBook.isbn10) {
+        searchConditions.push({ isbn10: savedBook.isbn10 });
+      }
+
+      if (searchConditions.length === 0) {
+        continue;
+      }
+
       const bookDetails = await Book.find({
-        $or: [{ isbn13: savedBook.isbn13 }, { isbn10: savedBook.isbn10 }],
+        $or: searchConditions,
       });
-    
+
       if (bookDetails.length > 0) {
         const bookData = {
           isbn10: savedBook.isbn10,
@@ -83,26 +97,30 @@ const getSavedBooks = async (req, res, next) => {
           title: bookDetails[0].title,
           author: bookDetails[0].author,
           addedAt: savedBook.addedAt,
+          savedBookId: savedBook._id,
           listings: [],
         };
-    
-        bookDetails.forEach((book) => {
+
+        for (const book of bookDetails) {
           if (
             (book.isbn13 && book.isbn13 === savedBook.isbn13) ||
             (book.isbn10 && book.isbn10 === savedBook.isbn10)
           ) {
+            const user = await User.findById(book.createdBy).select('firstName lastName location');
+
             bookData.listings.push({
-              userId: book.createdBy,
+              sellerId: book.createdBy,
+              sellerName: user ? `${user.firstName} ${user.lastName}` : null,
+              sellerLocation: user.location || 'Location not provided',
               bookIdOriginal: book._id,
-              bookIdInSaved: savedBook._id,
               price: book.price,
               isAvailable: book.isAvailable,
               condition: book.condition,
               coverImageUrl: book.coverImageUrl,
             });
           }
-        });
-    
+        }
+
         booksWithDetails.push(bookData);
       }
     }
