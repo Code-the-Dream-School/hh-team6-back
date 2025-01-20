@@ -145,17 +145,7 @@ const createPaymentIntent = async (req, res, next) => {
       return res.status(StatusCodes.OK).json({ msg: 'Payment already processed', cart });
     }
 
-    if (cart.clientSecret) {
-      const paymentIntent = await stripe.paymentIntents.retrieve(cart.paymentIntentId);
-      if (paymentIntent.status === 'requires_payment_method') {
-        cart.clientSecret = null;
-        cart.paymentIntentId = null;
-        await cart.save();
-      } else {
-        return res.status(StatusCodes.OK).json({ clientSecret: cart.clientSecret });
-      }
-    }
-
+    
     const totalAmount = Math.round(cart.total * 100);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmount,
